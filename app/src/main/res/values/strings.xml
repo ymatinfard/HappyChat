@@ -2,4 +2,5 @@
     <string name="app_name">HappyChat</string>
     <string name="online">online</string>
     <string name="happy">Happy</string>
+    <string name="enter_message">Enter message</string>
 </resources>
