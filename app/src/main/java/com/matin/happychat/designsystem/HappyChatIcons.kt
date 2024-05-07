@@ -1,4 +1,4 @@
-package com.matin.happychat.common
+package com.matin.happychat.designsystem
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Face

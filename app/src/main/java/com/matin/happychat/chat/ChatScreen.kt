@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matin.happychat.R
-import com.matin.happychat.common.HappyChatIcons
+import com.matin.happychat.designsystem.HappyChatIcons
 
 @Preview
 @Composable
@@ -97,7 +97,7 @@ private fun ChatTopBar() {
 
 @Composable
 fun MessageInput() {
-    TODO("Not yet implemented")
+
 }
 
 @Composable
