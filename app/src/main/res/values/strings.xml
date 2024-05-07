@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">HappyChat</string>
+    <string name="online">online</string>
+    <string name="happy">Happy</string>
 </resources>
