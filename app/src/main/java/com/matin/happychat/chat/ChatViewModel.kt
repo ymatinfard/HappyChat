@@ -30,7 +30,8 @@ class ChatViewModel @Inject constructor() : ViewModel() {
     }
 }
 
-fun List<Message>.add(message: Message) = this.toMutableList().apply { add(message) }
+fun List<Message>.add(message: Message) =
+    this.toMutableList().apply { add(index = 0, element = message) }
 
 data class ChatUiState(
     val messages: List<Message> = emptyList(),
