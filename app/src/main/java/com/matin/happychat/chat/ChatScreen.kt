@@ -6,8 +6,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,15 +28,21 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -43,12 +55,22 @@ import com.matin.happychat.R
 import com.matin.happychat.designsystem.HappyChatIcons
 import kotlinx.coroutines.flow.map
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(viewModel: ChatViewModel) {
-    Scaffold(modifier = Modifier.fillMaxSize(),
+
+    val topBarState = rememberTopAppBarState()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(topBarState)
+
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            ChatTopBar()
-        }
+            ChatTopBar(scrollBehavior = scrollBehavior)
+        },
+        contentWindowInsets = ScaffoldDefaults
+            .contentWindowInsets
+            .exclude(WindowInsets.navigationBars)
+            .exclude(WindowInsets.ime),
     ) { innerPadding ->
         val messages by viewModel.uiState.map { it.messages }
             .collectAsState(initial = emptyList())
@@ -61,18 +83,26 @@ fun ChatScreen(viewModel: ChatViewModel) {
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            MessageList(messages)
-            MessageInput(currentMessage, viewModel::onUpdateMessage, viewModel::onSendMessage)
+            MessageList(modifier = Modifier.weight(1f), messages)
+            MessageInput(
+                currentMessage,
+                viewModel::onUpdateMessage,
+                viewModel::onSendMessage,
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .imePadding()
+            )
         }
     }
 }
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun ChatTopBar() {
+private fun ChatTopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
     CenterAlignedTopAppBar(modifier =
     Modifier
         .padding(start = 8.dp, end = 8.dp),
+        scrollBehavior = scrollBehavior,
         title = {
             Column {
                 Text(buildAnnotatedString {
@@ -127,11 +157,12 @@ fun MessageInput(
     message: String,
     onUpdateMessage: (String) -> Unit,
     onSendMessageClick: (String) -> Unit,
+    modifier: Modifier,
 ) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+    Surface {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .background(color = MaterialTheme.colorScheme.primary)
                 .padding(start = 8.dp, end = 8.dp)
@@ -170,9 +201,9 @@ fun MessageInput(
 }
 
 @Composable
-fun MessageList(messages: List<Message>) {
-    Box {
-        LazyColumn {
+fun MessageList(modifier: Modifier, messages: List<Message>) {
+    Box(modifier = modifier) {
+        LazyColumn(modifier = Modifier.fillMaxSize(), reverseLayout = true) {
             items(messages, key = {
                 it.timeStamp
             }) {
