@@ -55,13 +55,16 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matin.happychat.R
 import com.matin.happychat.designsystem.HappyChatIcons
+import com.matin.happychat.designsystem.theme.HappyChatTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -235,10 +238,8 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
                         .fillMaxWidth(),
                     contentAlignment = if (message.author == "me") Alignment.CenterEnd else Alignment.CenterStart
                 ) {
-                    Text(
-                        text = message.message,
-                        color = if (message.author == "me") MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier
+                    Box(
+                        modifier
                             .clip(shape = RoundedCornerShape(8.dp))
                             .background(color = if (message.author == "me") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary)
                             .padding(
@@ -246,13 +247,46 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
                                 end = 6.dp,
                                 top = 4.dp,
                                 bottom = 4.dp
-                            ),
-                        fontSize = 18.sp,
-                    )
+                            )
+                    ) {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = message.message,
+                                color = if (message.author == "me") MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary,
+                                fontSize = 18.sp,
+                            )
+                            Text(
+                                text = formatTime(message.timeStamp),
+                                color = Color.DarkGray,
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
+
+@Preview
+@Composable
+fun MessagePreview(modifier: Modifier = Modifier) {
+    HappyChatTheme {
+        MessageList(
+            modifier = Modifier,
+            messages = listOf(
+                Message(
+                    message = "Hello",
+                    author = "me",
+                    timeStamp = System.currentTimeMillis()
+                )
+            ),
+            listState = LazyListState()
+        )
+    }
+}
+
+fun formatTime(timeStamp: Long) = SimpleDateFormat("HH:mm a").format(timeStamp)
 
 const val DISABLED_ALPHA = 0.38F

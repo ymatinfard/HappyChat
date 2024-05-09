@@ -17,13 +17,28 @@ class ChatViewModel @Inject constructor() : ViewModel() {
     init {
         // Fake data to represent received messages
         _uiState.update { state ->
-            state.copy(messages = listOf(Message(message = "Hi", author = "you", timeStamp = "1"), Message(message = "What's up", author = "you", timeStamp = "2")))
+            state.copy(
+                messages = listOf(
+                    Message(
+                        message = "Hi",
+                        author = "you",
+                        timeStamp = System.currentTimeMillis()
+                    ), Message(
+                        message = "What's up",
+                        author = "you",
+                        timeStamp = System.currentTimeMillis() + 123)
+                )
+            )
         }
     }
 
     fun onSendMessage(message: String) {
         val newMessage =
-            Message(message = message, author = "me", timeStamp = System.currentTimeMillis().toString())
+            Message(
+                message = message,
+                author = "me",
+                timeStamp = System.currentTimeMillis()
+            )
         _uiState.update { state ->
             val oldMessages = state.messages
             state.copy(messages = oldMessages.add(newMessage), currentMessage = "")
