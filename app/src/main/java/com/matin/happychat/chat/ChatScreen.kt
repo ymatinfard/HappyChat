@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -41,6 +43,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
@@ -49,10 +52,12 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matin.happychat.R
 import com.matin.happychat.designsystem.HappyChatIcons
+import com.matin.happychat.designsystem.theme.HappyChatTheme
 import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -202,12 +207,36 @@ fun MessageInput(
 
 @Composable
 fun MessageList(modifier: Modifier, messages: List<Message>) {
-    Box(modifier = modifier) {
-        LazyColumn(modifier = Modifier.fillMaxSize(), reverseLayout = true) {
+    Box(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            reverseLayout = true,
+        ) {
             items(messages, key = {
                 it.timeStamp
-            }) {
-                Text(text = it.message)
+            }) { message ->
+                Spacer(modifier = Modifier.height(2.dp))
+                Box(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .fillMaxWidth(),
+                    contentAlignment = if (message.author == "me") Alignment.CenterEnd else Alignment.CenterStart
+                ) {
+                    Text(
+                        text = message.message,
+                        color = if (message.author == "me") MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier
+                            .clip(shape = RoundedCornerShape(8.dp))
+                            .background(color = if (message.author == "me") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary)
+                            .padding(
+                                start = 6.dp,
+                                end = 6.dp,
+                                top = 4.dp,
+                                bottom = 4.dp
+                            ),
+                        fontSize = 18.sp,
+                    )
+                }
             }
         }
     }
