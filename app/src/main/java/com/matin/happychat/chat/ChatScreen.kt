@@ -1,7 +1,14 @@
 package com.matin.happychat.chat
 
+import android.Manifest
+import android.net.Uri
+import android.util.Log
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +30,8 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -41,14 +50,19 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -58,6 +72,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.matin.happychat.R
 import com.matin.happychat.designsystem.HappyChatIcons
 import com.matin.happychat.designsystem.theme.HappyChatTheme
@@ -99,7 +116,7 @@ fun ChatScreen(viewModel: ChatViewModel) {
             MessageList(modifier = Modifier.weight(1f), messages, listState)
             MessageInput(
                 message = currentMessage,
-                onUpdateMessage = viewModel::onUpdateMessage,
+                onMessageTextChange = viewModel::onUpdateMessage,
                 onSendMessageClick = viewModel::onSendMessage,
                 coroutineScope = coroutineScope,
                 listState = listState,
@@ -166,16 +183,26 @@ private fun ChatTopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
         })
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MessageInput(
     message: String,
-    onUpdateMessage: (String) -> Unit,
+    onMessageTextChange: (String) -> Unit,
     onSendMessageClick: (String) -> Unit,
     coroutineScope: CoroutineScope,
     listState: LazyListState,
     modifier: Modifier,
 ) {
+
+    var showPhotoPicker by remember {
+        mutableStateOf(false)
+    }
+
+    val photoPickLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+            showPhotoPicker = false
+        }
+
     Surface {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -186,9 +213,10 @@ fun MessageInput(
         ) {
 
             TextField(
+                modifier = Modifier.weight(1f),
                 value = message,
                 onValueChange = {
-                    onUpdateMessage(it)
+                    onMessageTextChange(it)
                 },
                 colors = TextFieldDefaults.textFieldColors(
                     cursorColor = MaterialTheme.colorScheme.onPrimary,
@@ -196,28 +224,78 @@ fun MessageInput(
                     unfocusedTextColor = MaterialTheme.colorScheme.onPrimary,
                     containerColor = Color.Transparent,
                 ),
-                modifier = Modifier.weight(1f),
                 textStyle = LocalTextStyle.current.copy(fontSize = 22.sp),
             )
 
-            Button(
-                onClick = {
-                    onSendMessageClick(message)
-                    coroutineScope.launch {
-                        listState.animateScrollToItem(0)
-                    }
-                },
-                border = BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.onPrimary),
-                colors = ButtonDefaults.buttonColors(
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    disabledContentColor = LocalContentColor.current.copy(alpha = DISABLED_ALPHA)
+            Row {
+                Icon(
+                    modifier = Modifier
+                        .padding(end = 6.dp)
+                        .clickable {
+                            // readExternalStoragePermissionGranted =
+                            showPhotoPicker = true
+                        },
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = null
                 )
-            ) {
-                Text(text = "Send")
+                Button(
+                    onClick = {
+                        onSendMessageClick(message)
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(0)
+                        }
+                    },
+                    border = BorderStroke(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    colors = ButtonDefaults.buttonColors(
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContentColor = LocalContentColor.current.copy(alpha = DISABLED_ALPHA)
+                    )
+                ) {
+                    Text(text = "Send")
+                }
             }
 
         }
+
+        if (showPhotoPicker) {
+            PhotoPicker(photoPickLauncher) {
+                showPhotoPicker = false
+            }
+        }
     }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun PhotoPicker(
+    photoPickerLauncher: ManagedActivityResultLauncher<String, Uri?>,
+    onDismiss: () -> Unit,
+) {
+    val readStoragePermission =
+        rememberPermissionState(permission = Manifest.permission.READ_EXTERNAL_STORAGE)
+
+    val permissionLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted.not()) {
+            //
+            }
+        }
+
+    LaunchedEffect(key1 = readStoragePermission) {
+        when {
+            readStoragePermission.status.isGranted -> {
+                photoPickerLauncher.launch("image/*")
+            }
+            else -> {
+                permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }
+    }
+
+    onDismiss()
 }
 
 @Composable

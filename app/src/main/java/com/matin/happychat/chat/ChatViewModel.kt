@@ -18,16 +18,7 @@ class ChatViewModel @Inject constructor() : ViewModel() {
         // Fake data to represent received messages
         _uiState.update { state ->
             state.copy(
-                messages = listOf(
-                    Message(
-                        message = "Hi",
-                        author = "you",
-                        timeStamp = System.currentTimeMillis()
-                    ), Message(
-                        message = "What's up",
-                        author = "you",
-                        timeStamp = System.currentTimeMillis() + 123)
-                )
+                messages = fakeReceivedMessages
             )
         }
     }
@@ -58,4 +49,16 @@ fun List<Message>.add(message: Message) =
 data class ChatUiState(
     val messages: List<Message> = emptyList(),
     val currentMessage: String = "",
+)
+
+val fakeReceivedMessages = listOf(
+    Message(
+        message = "Hi",
+        author = "you",
+        timeStamp = System.currentTimeMillis()
+    ), Message(
+        message = "What's up",
+        author = "you",
+        timeStamp = System.currentTimeMillis() + 123
+    )
 )

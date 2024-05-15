@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.android.hilt)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.accompanist.permissions)
     ksp(libs.android.hilt.compiler)
 
     testImplementation(libs.junit)
