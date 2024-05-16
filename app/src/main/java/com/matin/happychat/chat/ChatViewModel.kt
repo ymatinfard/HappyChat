@@ -24,6 +24,7 @@ class ChatViewModel @Inject constructor() : ViewModel() {
     }
 
     fun onSendMessage(message: String) {
+        if (message.trim().isEmpty()) return
         val newMessage =
             TextMessage(
                 BaseMessage(

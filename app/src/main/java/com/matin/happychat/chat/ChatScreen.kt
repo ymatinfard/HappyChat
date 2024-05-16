@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -204,13 +205,15 @@ fun MessageInput(
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
             if (uri != null) {
                 onSendPhotoMessage(uri.toString())
+                coroutineScope.launch {
+                    listState.animateScrollToItem(0)
+                }
             }
             showPhotoPicker = false
         }
 
     Surface {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Row(verticalAlignment = Alignment.Bottom,
             modifier = modifier
                 .fillMaxWidth()
                 .background(color = MaterialTheme.colorScheme.primary)
@@ -232,7 +235,7 @@ fun MessageInput(
                 textStyle = LocalTextStyle.current.copy(fontSize = 22.sp),
             )
 
-            Row (verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
                 Icon(
                     modifier = Modifier
                         .padding(end = 6.dp)
@@ -332,7 +335,7 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
                     ) {
                         when (message) {
                             is TextMessage -> {
-                                Row(verticalAlignment = Alignment.Bottom) {
+                                Column(verticalArrangement = Arrangement.Bottom) {
                                     Text(
                                         text = message.baseMessage.message,
                                         color = if (message.baseMessage.author == "me") MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary,
@@ -340,9 +343,11 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
                                     )
                                     Text(
                                         text = formatTime(message.baseMessage.timeStamp),
-                                        color = Color.DarkGray,
+                                        color = MaterialTheme.colorScheme.outline,
                                         fontSize = 10.sp,
-                                        modifier = Modifier.padding(start = 4.dp)
+                                        modifier = Modifier
+                                            .padding(start = 4.dp)
+                                            .align(alignment = Alignment.End)
                                     )
                                 }
                             }
