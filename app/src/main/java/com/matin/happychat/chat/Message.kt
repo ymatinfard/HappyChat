@@ -1,3 +1,17 @@
 package com.matin.happychat.chat
 
-data class Message(val message: String, val author: String, val timeStamp: Long)
+data class BaseMessage(
+    val message: String = "",
+    val author: String = "me",
+    val timeStamp: Long = 0,
+)
+
+interface Message {
+    val baseMessage: BaseMessage
+}
+
+data class TextMessage(override val baseMessage: BaseMessage = BaseMessage()) : Message
+data class ImageMessage(
+    override val baseMessage: BaseMessage = BaseMessage(),
+    val imageUri: String,
+) : Message

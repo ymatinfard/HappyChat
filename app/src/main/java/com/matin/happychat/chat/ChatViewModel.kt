@@ -25,14 +25,15 @@ class ChatViewModel @Inject constructor() : ViewModel() {
 
     fun onSendMessage(message: String) {
         val newMessage =
-            Message(
-                message = message,
-                author = "me",
-                timeStamp = System.currentTimeMillis()
+            TextMessage(
+                BaseMessage(
+                    message = message,
+                    author = "me",
+                    timeStamp = System.currentTimeMillis()
+                )
             )
         _uiState.update { state ->
-            val oldMessages = state.messages
-            state.copy(messages = oldMessages.add(newMessage), currentMessage = "")
+            updateChatUiState(state, newMessage)
         }
     }
 
@@ -40,6 +41,25 @@ class ChatViewModel @Inject constructor() : ViewModel() {
         _uiState.update { state ->
             state.copy(currentMessage = newMessage)
         }
+    }
+
+    fun onSendImageMessage(selectedPhotoUri: String) {
+        val newMessage = ImageMessage(
+            baseMessage = BaseMessage("Photo", "me", System.currentTimeMillis()),
+            imageUri = selectedPhotoUri
+        )
+
+        _uiState.update { state ->
+            updateChatUiState(state, newMessage)
+        }
+    }
+
+    private fun updateChatUiState(
+        state: ChatUiState,
+        newMessage: Message,
+    ): ChatUiState {
+        val oldMessages = state.messages
+        return state.copy(messages = oldMessages.add(newMessage), currentMessage = "")
     }
 }
 
@@ -52,13 +72,18 @@ data class ChatUiState(
 )
 
 val fakeReceivedMessages = listOf(
-    Message(
-        message = "Hi",
-        author = "you",
-        timeStamp = System.currentTimeMillis()
-    ), Message(
-        message = "What's up",
-        author = "you",
-        timeStamp = System.currentTimeMillis() + 123
+    TextMessage(
+        baseMessage = BaseMessage(
+            message = "Hi",
+            author = "you",
+            timeStamp = System.currentTimeMillis()
+        )
+    ),
+    TextMessage(
+        baseMessage = BaseMessage(
+            message = "How are you?",
+            author = "you",
+            timeStamp = System.currentTimeMillis() + 123
+        )
     )
 )

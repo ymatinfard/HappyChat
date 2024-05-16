@@ -2,7 +2,6 @@ package com.matin.happychat.chat
 
 import android.Manifest
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -62,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -69,15 +69,15 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.matin.happychat.R
 import com.matin.happychat.designsystem.HappyChatIcons
-import com.matin.happychat.designsystem.theme.HappyChatTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -117,7 +117,8 @@ fun ChatScreen(viewModel: ChatViewModel) {
             MessageInput(
                 message = currentMessage,
                 onMessageTextChange = viewModel::onUpdateMessage,
-                onSendMessageClick = viewModel::onSendMessage,
+                onSendTextMessage = viewModel::onSendMessage,
+                onSendPhotoMessage = viewModel::onSendImageMessage,
                 coroutineScope = coroutineScope,
                 listState = listState,
                 modifier = Modifier
@@ -183,12 +184,13 @@ private fun ChatTopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
         })
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessageInput(
     message: String,
     onMessageTextChange: (String) -> Unit,
-    onSendMessageClick: (String) -> Unit,
+    onSendTextMessage: (String) -> Unit,
+    onSendPhotoMessage: (String) -> Unit,
     coroutineScope: CoroutineScope,
     listState: LazyListState,
     modifier: Modifier,
@@ -200,6 +202,9 @@ fun MessageInput(
 
     val photoPickLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+            if (uri != null) {
+                onSendPhotoMessage(uri.toString())
+            }
             showPhotoPicker = false
         }
 
@@ -227,20 +232,20 @@ fun MessageInput(
                 textStyle = LocalTextStyle.current.copy(fontSize = 22.sp),
             )
 
-            Row {
+            Row (verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     modifier = Modifier
                         .padding(end = 6.dp)
                         .clickable {
-                            // readExternalStoragePermissionGranted =
                             showPhotoPicker = true
                         },
-                    imageVector = Icons.Default.AccountCircle,
+                    painter = painterResource(R.drawable.ic_attach_file),
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     contentDescription = null
                 )
                 Button(
                     onClick = {
-                        onSendMessageClick(message)
+                        onSendTextMessage(message)
                         coroutineScope.launch {
                             listState.animateScrollToItem(0)
                         }
@@ -261,9 +266,9 @@ fun MessageInput(
         }
 
         if (showPhotoPicker) {
-            PhotoPicker(photoPickLauncher) {
+            PhotoPicker(photoPickLauncher, onDismiss = {
                 showPhotoPicker = false
-            }
+            })
         }
     }
 }
@@ -279,9 +284,6 @@ fun PhotoPicker(
 
     val permissionLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted.not()) {
-            //
-            }
         }
 
     LaunchedEffect(key1 = readStoragePermission) {
@@ -289,6 +291,7 @@ fun PhotoPicker(
             readStoragePermission.status.isGranted -> {
                 photoPickerLauncher.launch("image/*")
             }
+
             else -> {
                 permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
@@ -307,19 +310,19 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
             state = listState
         ) {
             items(messages, key = {
-                it.timeStamp
+                it.baseMessage.timeStamp
             }) { message ->
                 Spacer(modifier = Modifier.height(2.dp))
                 Box(
                     modifier = Modifier
                         .padding(4.dp)
                         .fillMaxWidth(),
-                    contentAlignment = if (message.author == "me") Alignment.CenterEnd else Alignment.CenterStart
+                    contentAlignment = if (message.baseMessage.author == "me") Alignment.CenterEnd else Alignment.CenterStart
                 ) {
                     Box(
                         modifier
                             .clip(shape = RoundedCornerShape(8.dp))
-                            .background(color = if (message.author == "me") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary)
+                            .background(color = if (message.baseMessage.author == "me") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary)
                             .padding(
                                 start = 6.dp,
                                 end = 6.dp,
@@ -327,18 +330,26 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
                                 bottom = 4.dp
                             )
                     ) {
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = message.message,
-                                color = if (message.author == "me") MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary,
-                                fontSize = 18.sp,
-                            )
-                            Text(
-                                text = formatTime(message.timeStamp),
-                                color = Color.DarkGray,
-                                fontSize = 10.sp,
-                                modifier = Modifier.padding(start = 4.dp)
-                            )
+                        when (message) {
+                            is TextMessage -> {
+                                Row(verticalAlignment = Alignment.Bottom) {
+                                    Text(
+                                        text = message.baseMessage.message,
+                                        color = if (message.baseMessage.author == "me") MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary,
+                                        fontSize = 18.sp,
+                                    )
+                                    Text(
+                                        text = formatTime(message.baseMessage.timeStamp),
+                                        color = Color.DarkGray,
+                                        fontSize = 10.sp,
+                                        modifier = Modifier.padding(start = 4.dp)
+                                    )
+                                }
+                            }
+
+                            is ImageMessage -> {
+                                ImageFromUri(message.imageUri)
+                            }
                         }
                     }
                 }
@@ -347,24 +358,20 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
     }
 }
 
-@Preview
 @Composable
-fun MessagePreview(modifier: Modifier = Modifier) {
-    HappyChatTheme {
-        MessageList(
-            modifier = Modifier,
-            messages = listOf(
-                Message(
-                    message = "Hello",
-                    author = "me",
-                    timeStamp = System.currentTimeMillis()
-                )
-            ),
-            listState = LazyListState()
-        )
-    }
+fun ImageFromUri(imageUrl: String) {
+    AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(imageUrl)
+            .crossfade(true)
+            .build(),
+        placeholder = painterResource(R.drawable.ic_happy_chat),
+        contentDescription = "Image",
+        contentScale = ContentScale.Crop,
+        modifier = Modifier.size(width = 200.dp, height = 300.dp),
+    )
 }
 
-fun formatTime(timeStamp: Long) = SimpleDateFormat("HH:mm a").format(timeStamp)
+fun formatTime(timeStamp: Long): String = SimpleDateFormat("HH:mm a").format(timeStamp)
 
 const val DISABLED_ALPHA = 0.38F
