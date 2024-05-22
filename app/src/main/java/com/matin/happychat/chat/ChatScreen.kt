@@ -1,14 +1,12 @@
 package com.matin.happychat.chat
 
+import MediaUtils
 import MessageTimeStamp
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -61,14 +59,14 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,21 +85,24 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.matin.happychat.R
 import com.matin.happychat.designsystem.HappyChatIcons
+import com.matin.happychat.mediaplayer.HappyChatMediaPlayer
+import com.matin.happychat.mediaplayer.HappyChatMediaRecorder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(viewModel: ChatViewModel) {
+fun ChatScreen(viewModel: ChatViewModel, player: HappyChatMediaPlayer, mediaRecorder: HappyChatMediaRecorder) {
 
     val topBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(topBarState)
@@ -129,13 +130,14 @@ fun ChatScreen(viewModel: ChatViewModel) {
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            MessageList(modifier = Modifier.weight(1f), messages, listState)
+            MessageList(modifier = Modifier.weight(1f), messages, listState, player)
             MessageInput(
                 message = currentMessage,
                 onMessageTextChange = viewModel::onUpdateMessage,
                 onSendTextMessage = viewModel::onSendMessage,
                 onSendPhotoMessage = viewModel::onSendImageMessage,
                 onSendVoiceMessage = viewModel::onSendVoiceMessage,
+                mediaRecorder = mediaRecorder,
                 coroutineScope = coroutineScope,
                 listState = listState,
                 modifier = Modifier
@@ -210,6 +212,7 @@ fun MessageInput(
     onSendTextMessage: (String) -> Unit,
     onSendPhotoMessage: (String) -> Unit,
     onSendVoiceMessage: (String) -> Unit,
+    mediaRecorder: HappyChatMediaRecorder,
     coroutineScope: CoroutineScope,
     listState: LazyListState,
     modifier: Modifier,
@@ -285,7 +288,7 @@ fun MessageInput(
                 } else {
                     VoiceRecordingIcon(isRecording) {
                         isRecording = if (isRecording) {
-                            stopRecording(onSendVoiceMessage)
+                            mediaRecorder.stopRecording(onSendVoiceMessage)
                             false
                         } else {
                             true
@@ -314,7 +317,7 @@ fun MessageInput(
                     permission = Manifest.permission.RECORD_AUDIO
                 )
             ) {
-                startRecording(context)
+                mediaRecorder.startRecording()
             } else {
                 isRecording = false
                 LaunchedEffect(Unit) {
@@ -397,7 +400,12 @@ private fun isPermissionGranted(permission: String, context: Context): Boolean {
 }
 
 @Composable
-fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyListState) {
+fun MessageList(
+    modifier: Modifier,
+    messages: List<Message>,
+    listState: LazyListState,
+    player: HappyChatMediaPlayer,
+) {
     Box(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -441,11 +449,11 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
                             }
 
                             is ImageMessage -> {
-                                ImageFromUri(message.imageUri)
+                                ImageMessageBubble(message.imageUri)
                             }
 
                             is VoiceMessage -> {
-                                VoiceMessageBubble(message)
+                                VoiceMessageBubble(message, player)
                             }
                         }
                     }
@@ -460,7 +468,7 @@ private fun chooseOnSurfaceColorFor(author: String) =
     if (author == "me") MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary
 
 @Composable
-fun ImageFromUri(imageUrl: String) {
+fun ImageMessageBubble(imageUrl: String) {
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
             .data(imageUrl)
@@ -473,68 +481,30 @@ fun ImageFromUri(imageUrl: String) {
     )
 }
 
-private var mediaRecorder: MediaRecorder? = null
-private var outputFile: File? = null
-
-@RequiresApi(Build.VERSION_CODES.O)
-private fun startRecording(context: Context) {
-    val outputDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-    outputFile = File(outputDir, "audio_${System.currentTimeMillis()}.3gp")
-
-    mediaRecorder = MediaRecorder().apply {
-        setAudioSource(MediaRecorder.AudioSource.MIC)
-        setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-        setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-        setOutputFile(outputFile)
-        prepare()
-        start()
-    }
-
-    Toast.makeText(context, "Recording started", Toast.LENGTH_SHORT).show()
-}
-
-private fun stopRecording(onSendVoiceMessage: (String) -> Unit) {
-    mediaRecorder?.apply {
-        stop()
-        release()
-    }
-    mediaRecorder = null
-    outputFile?.let { file ->
-        onSendVoiceMessage(file.path)
-        // Handle the recorded audio file (e.g., send it)
-    }
-}
 
 @Composable
-fun VoiceMessageBubble(message: Message) {
-    // TODO() Exception handling should be done
+fun VoiceMessageBubble(message: Message, player: HappyChatMediaPlayer) {
     val voiceMessage = message as VoiceMessage
-    val file = File(voiceMessage.voicePath)
-    val mediaPlayer = remember { android.media.MediaPlayer() }
-    var isPlaying by remember { mutableStateOf(false) }
-    var duration by remember { mutableIntStateOf(0) }
-    var currentPosition by remember { mutableIntStateOf(0) }
+    var isPlaying by rememberSaveable { mutableStateOf(false) }
+    val duration by remember { mutableLongStateOf(MediaUtils.getDuration(voiceMessage.voicePath)) }
+    var remainingTime by rememberSaveable { mutableLongStateOf(duration) }
 
-    DisposableEffect(Unit) {
-        mediaPlayer.setOnCompletionListener { mediaPlayer ->
-            isPlaying = false
-            mediaPlayer.seekTo(0)
-            currentPosition = 0
+    val playBackStateListener = object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            when (playbackState) {
+                ExoPlayer.STATE_ENDED,
+                ExoPlayer.STATE_IDLE,
+                -> {
+                    isPlaying = false
+                    remainingTime = duration
+                }
+            }
         }
-        onDispose {
-            mediaPlayer.release()
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        mediaPlayer.setDataSource(file.absolutePath)
-        mediaPlayer.prepare()
-        duration = mediaPlayer.duration
     }
 
     LaunchedEffect(isPlaying) {
-        while (isPlaying && currentPosition < duration) {
-            currentPosition = mediaPlayer.currentPosition
+        while (isPlaying && player.currentPosition < duration) {
+            remainingTime = duration - player.currentPosition
             delay(300)
         }
     }
@@ -551,13 +521,21 @@ fun VoiceMessageBubble(message: Message) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = {
-                    if (isPlaying) {
-                        mediaPlayer.pause()
-                        isPlaying = false
-                    } else {
-                        mediaPlayer.start()
-                        isPlaying = true
+                    when {
+                        isPlaying -> {
+                            player.pause()
+                            isPlaying = false
+                        }
+
+                        player.isPaused(message.voicePath) -> {
+                            player.play()
+                        }
+
+                        else -> {
+                            player.startPlayer(message.voicePath, playBackStateListener)
+                        }
                     }
+                    isPlaying = !isPlaying
                 }) {
                     Icon(
                         painter = painterResource(
@@ -570,7 +548,7 @@ fun VoiceMessageBubble(message: Message) {
                 }
 
                 LinearProgressIndicator(
-                    progress = if (duration > 0) currentPosition / duration.toFloat() else 0f,
+                    progress = duration - remainingTime.toFloat(),
                     modifier = Modifier
                         .padding(start = 4.dp, end = 6.dp)
                         .weight(1f)
@@ -579,7 +557,7 @@ fun VoiceMessageBubble(message: Message) {
                 )
 
                 Text(
-                    text = formatVoiceTime(duration - currentPosition),
+                    text = remainingTime.withFormat("%02d:%02d"),
                     fontSize = 14.sp,
                     color = chooseOnSurfaceColorFor(author = message.baseMessage.author)
                 )
@@ -592,11 +570,11 @@ fun VoiceMessageBubble(message: Message) {
     }
 }
 
-fun formatVoiceTime(milliseconds: Int): String {
-    val totalSeconds = milliseconds / 1000
+fun Long.withFormat(format: String): String {
+    val totalSeconds = this / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    return String.format("%02d:%02d", minutes, seconds)
+    return String.format(format, minutes, seconds)
 }
 
 const val DISABLED_ALPHA = 0.38F
