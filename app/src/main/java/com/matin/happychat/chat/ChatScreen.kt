@@ -1,5 +1,6 @@
 package com.matin.happychat.chat
 
+import MessageTimeStamp
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -8,7 +9,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.widget.Toast
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -47,6 +47,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -96,7 +97,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.File
-import java.text.SimpleDateFormat
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -430,16 +430,12 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
                                 Column(verticalArrangement = Arrangement.Bottom) {
                                     Text(
                                         text = message.baseMessage.message,
-                                        color = if (message.baseMessage.author == "me") MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary,
+                                        color = chooseOnSurfaceColorFor(message.baseMessage.author),
                                         fontSize = 18.sp,
                                     )
-                                    Text(
-                                        text = formatTime(message.baseMessage.timeStamp),
-                                        color = MaterialTheme.colorScheme.outline,
-                                        fontSize = 10.sp,
-                                        modifier = Modifier
-                                            .padding(start = 4.dp)
-                                            .align(alignment = Alignment.End)
+                                    MessageTimeStamp(
+                                        timeStamp = message.baseMessage.timeStamp,
+                                        modifier = Modifier.align(alignment = Alignment.End)
                                     )
                                 }
                             }
@@ -449,7 +445,7 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
                             }
 
                             is VoiceMessage -> {
-                                VoiceMessageBubble(message.voicePath)
+                                VoiceMessageBubble(message)
                             }
                         }
                     }
@@ -458,6 +454,10 @@ fun MessageList(modifier: Modifier, messages: List<Message>, listState: LazyList
         }
     }
 }
+
+@Composable
+private fun chooseOnSurfaceColorFor(author: String) =
+    if (author == "me") MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary
 
 @Composable
 fun ImageFromUri(imageUrl: String) {
@@ -506,16 +506,17 @@ private fun stopRecording(onSendVoiceMessage: (String) -> Unit) {
 }
 
 @Composable
-fun VoiceMessageBubble(path: String) {
+fun VoiceMessageBubble(message: Message) {
     // TODO() Exception handling should be done
-    val file = File(path)
+    val voiceMessage = message as VoiceMessage
+    val file = File(voiceMessage.voicePath)
     val mediaPlayer = remember { android.media.MediaPlayer() }
     var isPlaying by remember { mutableStateOf(false) }
     var duration by remember { mutableIntStateOf(0) }
     var currentPosition by remember { mutableIntStateOf(0) }
 
     DisposableEffect(Unit) {
-        mediaPlayer.setOnCompletionListener { mediaPlayer->
+        mediaPlayer.setOnCompletionListener { mediaPlayer ->
             isPlaying = false
             mediaPlayer.seekTo(0)
             currentPosition = 0
@@ -540,18 +541,14 @@ fun VoiceMessageBubble(path: String) {
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
+            .width(300.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(Color.LightGray)
-            .padding(16.dp)
     ) {
         Column {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = {
                     if (isPlaying) {
@@ -566,21 +563,34 @@ fun VoiceMessageBubble(path: String) {
                         painter = painterResource(
                             id = if (isPlaying) R.drawable.ic_stop_media else R.drawable.ic_play_media
                         ),
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(42.dp),
+                        tint = chooseOnSurfaceColorFor(author = message.baseMessage.author),
                         contentDescription = null
                     )
                 }
+
+                LinearProgressIndicator(
+                    progress = if (duration > 0) currentPosition / duration.toFloat() else 0f,
+                    modifier = Modifier
+                        .padding(start = 4.dp, end = 6.dp)
+                        .weight(1f)
+                        .background(color = MaterialTheme.colorScheme.onBackground),
+                    color = chooseOnSurfaceColorFor(author = message.baseMessage.author)
+                )
+
                 Text(
                     text = formatVoiceTime(duration - currentPosition),
                     fontSize = 14.sp,
-                    color = Color.Black
+                    color = chooseOnSurfaceColorFor(author = message.baseMessage.author)
                 )
             }
+            MessageTimeStamp(
+                timeStamp = message.baseMessage.timeStamp,
+                modifier = Modifier.align(alignment = Alignment.End)
+            )
         }
     }
 }
-
-fun formatTime(timeStamp: Long): String = SimpleDateFormat("HH:mm a").format(timeStamp)
 
 fun formatVoiceTime(milliseconds: Int): String {
     val totalSeconds = milliseconds / 1000
