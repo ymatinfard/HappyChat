@@ -55,6 +55,13 @@ class ChatViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    fun onSendVoiceMessage(path: String) {
+        val newMessage = VoiceMessage(voicePath = path)
+        _uiState.update { state ->
+            updateChatUiState(state, newMessage)
+        }
+    }
+
     private fun updateChatUiState(
         state: ChatUiState,
         newMessage: Message,

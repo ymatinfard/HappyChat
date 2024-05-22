@@ -15,3 +15,4 @@ data class ImageMessage(
     override val baseMessage: BaseMessage = BaseMessage(),
     val imageUri: String,
 ) : Message
+data class VoiceMessage(override val baseMessage: BaseMessage = BaseMessage(), val voicePath: String): Message
