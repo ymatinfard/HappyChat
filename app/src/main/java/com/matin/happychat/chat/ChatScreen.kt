@@ -515,8 +515,9 @@ fun VoiceMessageBubble(path: String) {
     var currentPosition by remember { mutableIntStateOf(0) }
 
     DisposableEffect(Unit) {
-        mediaPlayer.setOnCompletionListener {
+        mediaPlayer.setOnCompletionListener { mediaPlayer->
             isPlaying = false
+            mediaPlayer.seekTo(0)
             currentPosition = 0
         }
         onDispose {
@@ -533,7 +534,7 @@ fun VoiceMessageBubble(path: String) {
     LaunchedEffect(isPlaying) {
         while (isPlaying && currentPosition < duration) {
             currentPosition = mediaPlayer.currentPosition
-            delay(200)
+            delay(300)
         }
     }
 
@@ -554,8 +555,7 @@ fun VoiceMessageBubble(path: String) {
             ) {
                 IconButton(onClick = {
                     if (isPlaying) {
-                        mediaPlayer.stop()
-                        mediaPlayer.reset()
+                        mediaPlayer.pause()
                         isPlaying = false
                     } else {
                         mediaPlayer.start()
