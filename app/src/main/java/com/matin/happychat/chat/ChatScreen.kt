@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -72,10 +73,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -102,7 +106,11 @@ import kotlinx.coroutines.launch
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(viewModel: ChatViewModel, player: HappyChatMediaPlayer, mediaRecorder: HappyChatMediaRecorder) {
+fun ChatScreen(
+    viewModel: ChatViewModel,
+    player: HappyChatMediaPlayer,
+    mediaRecorder: HappyChatMediaRecorder
+) {
 
     val topBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(topBarState)
@@ -151,51 +159,54 @@ fun ChatScreen(viewModel: ChatViewModel, player: HappyChatMediaPlayer, mediaReco
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun ChatTopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
-    CenterAlignedTopAppBar(modifier =
-    Modifier
-        .padding(start = 8.dp, end = 8.dp),
+    CenterAlignedTopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
         scrollBehavior = scrollBehavior,
         title = {
             Column {
-                Text(buildAnnotatedString {
-                    withStyle(
-                        style = SpanStyle(
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    ) {
-                        append(stringResource(R.string.happy))
-                    }
-                    withStyle(
-                        style = SpanStyle(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = Color.DarkGray
-                        )
-                    ) {
-                        append(" ")
-                        append(stringResource(R.string.online))
-                    }
-                })
+                Text(
+                    buildAnnotatedString {
+                        withStyle(
+                            style = SpanStyle(
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        ) {
+                            append(stringResource(R.string.happy))
+                        }
+                        withStyle(
+                            style = SpanStyle(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Normal
+                            )
+                        ) {
+                            append(" ")
+                            append(stringResource(R.string.online))
+                        }
+                    },
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }, actions = {
-            Row {
+            Row(modifier = Modifier.padding(end = 8.dp)) {
                 Icon(
                     imageVector = HappyChatIcons.SEARCH,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = Color.White
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Icon(
                     imageVector = HappyChatIcons.INFO,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = Color.White
                 )
             }
         },
         navigationIcon = {
             Icon(
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier
+                    .size(32.dp)
+                    .padding(start = 8.dp),
                 tint = Color.Unspecified,
                 painter = painterResource(id = R.drawable.ic_happy_chat),
                 contentDescription = null
@@ -203,7 +214,8 @@ private fun ChatTopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
         })
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MessageInput(
@@ -238,12 +250,37 @@ fun MessageInput(
             showPhotoPicker = false
         }
 
-    val voiceRecordPermissionLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                isRecording = true
-            }
+    val externalStoragePermissionLauncher = permissionLauncher(denied = {
+        toast(context, "Permission denied")
+    }) {
+        showPhotoPicker = true
+    }
+
+    val voiceRecordPermissionLauncher = permissionLauncher(denied = {
+        toast(context, "Permission denied")
+    }) {
+        isRecording = true
+    }
+
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    LaunchedEffect(Unit) {
+        delay(300)
+        focusRequester.requestFocus()
+        keyboardController?.hide()
+    }
+
+    if (showPhotoPicker) {
+        if (isPermissionGranted(
+                context = context,
+                permission = Manifest.permission.READ_MEDIA_IMAGES
+            )
+        ) {
+            photoPickLauncher.launch("image/*")
+        } else {
+            externalStoragePermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
         }
+    }
 
     Surface {
         Row(
@@ -254,7 +291,9 @@ fun MessageInput(
                 .padding(start = 8.dp, end = 8.dp)
         ) {
             TextField(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(focusRequester),
                 value = message,
                 onValueChange = {
                     onMessageTextChange(it)
@@ -298,19 +337,6 @@ fun MessageInput(
             }
         }
 
-        if (showPhotoPicker) {
-            if (isPermissionGranted(
-                    context = context,
-                    permission = Manifest.permission.READ_EXTERNAL_STORAGE
-                )
-            ) {
-                photoPickLauncher.launch("image/*")
-                showPhotoPicker = false
-            } else {
-                photoPickLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-        }
-
         if (isRecording) {
             if (isPermissionGranted(
                     context = context,
@@ -326,6 +352,15 @@ fun MessageInput(
             }
         }
     }
+}
+
+
+private fun toast(context: Context, message: String) {
+    Toast.makeText(
+        context,
+        message,
+        Toast.LENGTH_SHORT
+    ).show()
 }
 
 @Composable
@@ -494,7 +529,7 @@ fun VoiceMessageBubble(message: Message, player: HappyChatMediaPlayer) {
             when (playbackState) {
                 ExoPlayer.STATE_ENDED,
                 ExoPlayer.STATE_IDLE,
-                -> {
+                    -> {
                     isPlaying = false
                     remainingTime = duration
                 }
@@ -576,5 +611,17 @@ fun Long.withFormat(format: String): String {
     val seconds = totalSeconds % 60
     return String.format(format, minutes, seconds)
 }
+
+@Composable
+fun permissionLauncher(denied: () -> Unit = {}, granted: () -> Unit) =
+    rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            granted()
+        } else {
+            denied()
+        }
+    }
 
 const val DISABLED_ALPHA = 0.38F

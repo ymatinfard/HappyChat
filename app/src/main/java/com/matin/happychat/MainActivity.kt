@@ -1,14 +1,12 @@
 package com.matin.happychat
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matin.happychat.chat.ChatScreen
 import com.matin.happychat.chat.ChatViewModel
@@ -27,30 +25,22 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var mediaRecorder: HappyChatMediaRecorder
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+
         setContent {
+
             HappyChatTheme {
                 val viewModel = viewModel<ChatViewModel>()
-                ChatScreen(viewModel = viewModel, player = happyChatMediaPlayer, mediaRecorder = mediaRecorder)
+                ChatScreen(
+                    viewModel = viewModel,
+                    player = happyChatMediaPlayer,
+                    mediaRecorder = mediaRecorder
+                )
             }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    HappyChatTheme {
-        Greeting("Android")
-    }
-}
