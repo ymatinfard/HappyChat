@@ -16,6 +16,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,6 +43,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -172,7 +176,7 @@ private fun ChatTopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
                                 fontWeight = FontWeight.Bold,
                             )
                         ) {
-                            append(stringResource(R.string.happy))
+                            append("USF")
                         }
                         withStyle(
                             style = SpanStyle(
@@ -203,14 +207,23 @@ private fun ChatTopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
             }
         },
         navigationIcon = {
-            Icon(
-                modifier = Modifier
-                    .size(32.dp)
-                    .padding(start = 8.dp),
-                tint = Color.Unspecified,
-                painter = painterResource(id = R.drawable.ic_happy_chat),
-                contentDescription = null
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    modifier = Modifier
+                        .padding(start = 8.dp),
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = null
+                )
+
+                Image(
+                    painter = painterResource(R.drawable.profile_img),
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .size(42.dp),
+                    contentDescription = null
+                )
+            }
         })
 }
 

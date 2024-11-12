@@ -82,16 +82,16 @@ data class ChatUiState(
 val fakeReceivedMessages = listOf(
     TextMessage(
         baseMessage = BaseMessage(
+            message = "How are you?",
+            author = "you",
+            timeStamp = System.currentTimeMillis() + 123
+        )
+    ),
+    TextMessage(
+        baseMessage = BaseMessage(
             message = "Hi",
             author = "you",
             timeStamp = System.currentTimeMillis()
         )
     ),
-    TextMessage(
-        baseMessage = BaseMessage(
-            message = "How are you?",
-            author = "you",
-            timeStamp = System.currentTimeMillis() + 123
-        )
-    )
 )
