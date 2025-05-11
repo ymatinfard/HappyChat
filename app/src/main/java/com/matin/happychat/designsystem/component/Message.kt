@@ -1,6 +1,7 @@
 package com.matin.happychat.designsystem.component
 
 import MediaUtils
+import MessageTimeStamp
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +58,7 @@ private const val VOICE_MESSAGE_WIDTH = 300
 private const val VOICE_PLAYER_ICON_SIZE = 42
 private const val VOICE_PLAYBACK_UPDATE_INTERVAL = 300L
 private const val MESSAGE_TEXT_SIZE = 18
-private const val TIMESTAMP_TEXT_SIZE = 14
+internal const val TIMESTAMP_TEXT_SIZE = 14
 
 /**
  * Displays the list of messages
@@ -276,27 +277,6 @@ private fun VoiceMessageContent(
     }
 }
 
-@Composable
-private fun MessageTimeStamp(
-    timeStamp: Long,
-    isFromCurrentUser: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = formatTimestamp(timeStamp),
-        fontSize = TIMESTAMP_TEXT_SIZE.sp,
-        color = chooseOnSurfaceColorFor(isFromCurrentUser),
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun chooseOnSurfaceColorFor(isFromCurrentUser: Boolean) =
-    if (isFromCurrentUser)
-        MaterialTheme.colorScheme.onTertiary
-    else
-        MaterialTheme.colorScheme.onPrimary
-
 /**
  * Creates a flow that emits playback progress updates
  */
@@ -319,11 +299,4 @@ private fun formatDuration(durationMs: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return String.format("%02d:%02d", minutes, seconds)
-}
-
-/**
- * Format timestamp for display
- */
-private fun formatTimestamp(timestamp: Long): String {
-    return "12:34 PM" // Placeholder
 }

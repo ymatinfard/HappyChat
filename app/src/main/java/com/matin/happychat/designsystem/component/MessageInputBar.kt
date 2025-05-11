@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Icon
@@ -67,6 +68,7 @@ fun MessageInputBar(
             MessageTextField(
                 value = message,
                 onValueChange = onMessageChange,
+                onSendClick = onSendClick,
                 modifier = Modifier.weight(1f)
             )
 
@@ -102,12 +104,14 @@ fun MessageInputBar(
 private fun MessageTextField(
     value: String,
     onValueChange: (String) -> Unit,
+    onSendClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     TextField(
         modifier = modifier,
         value = value,
         onValueChange = onValueChange,
+        maxLines = 1,
         colors = TextFieldDefaults.colors(
             cursorColor = MaterialTheme.colorScheme.onPrimary,
             focusedTextColor = MaterialTheme.colorScheme.onPrimary,
@@ -119,9 +123,13 @@ private fun MessageTextField(
             fontSize = MESSAGE_INPUT_TEXT_SIZE.sp,
             color = MaterialTheme.colorScheme.onPrimary
         ),
-        keyboardOptions = KeyboardOptions.Default.copy(
-            imeAction = ImeAction.Send  // For chat input
+        keyboardOptions = KeyboardOptions(
+            imeAction = ImeAction.Done  // For chat input
         ),
+        keyboardActions = KeyboardActions(
+            onDone = { onSendClick() }
+        )
+        ,
         placeholder = {
             Text(
                 text = "Type a message...",
