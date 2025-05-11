@@ -18,7 +18,6 @@ class HappyChatMediaRecorder @Inject constructor(@ApplicationContext private val
     private var mediaRecorder: MediaRecorder? = null
     var outputFile: File? = null
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun startRecording() {
         val outputDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
         outputFile = generateFileIn(outputDir)

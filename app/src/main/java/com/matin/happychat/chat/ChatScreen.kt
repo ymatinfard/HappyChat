@@ -52,12 +52,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -97,7 +97,6 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.matin.happychat.R
 import com.matin.happychat.designsystem.HappyChatIcons
 import com.matin.happychat.mediaplayer.HappyChatMediaPlayer
@@ -228,8 +227,6 @@ private fun ChatTopBar(scrollBehavior: TopAppBarScrollBehavior? = null) {
 }
 
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MessageInput(
     message: String,
@@ -303,7 +300,7 @@ fun MessageInput(
                 .background(color = MaterialTheme.colorScheme.primary)
                 .padding(start = 8.dp, end = 8.dp)
         ) {
-            TextField(
+            OutlinedTextField(
                 modifier = Modifier
                     .weight(1f)
                     .focusRequester(focusRequester),
@@ -311,11 +308,10 @@ fun MessageInput(
                 onValueChange = {
                     onMessageTextChange(it)
                 },
-                colors = TextFieldDefaults.textFieldColors(
+                colors = OutlinedTextFieldDefaults.colors(
                     cursorColor = MaterialTheme.colorScheme.onPrimary,
                     focusedTextColor = MaterialTheme.colorScheme.onPrimary,
                     unfocusedTextColor = MaterialTheme.colorScheme.onPrimary,
-                    containerColor = Color.Transparent,
                 ),
                 textStyle = LocalTextStyle.current.copy(fontSize = 22.sp),
             )
