@@ -8,18 +8,18 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import com.matin.happychat.chat.ChatScreen
 import com.matin.happychat.designsystem.theme.HappyChatTheme
-import com.matin.happychat.mediaplayer.HappyChatMediaPlayer
-import com.matin.happychat.mediaplayer.HappyChatMediaRecorder
+import com.matin.happychat.mediaplayer.VoiceMessagePlayer
+import com.matin.happychat.mediaplayer.VoiceMessageRecorder
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
-    lateinit var happyChatMediaPlayer: HappyChatMediaPlayer
+    lateinit var voiceMessagePlayer: VoiceMessagePlayer
 
     @Inject
-    lateinit var mediaRecorder: HappyChatMediaRecorder
+    lateinit var voiceMessageRecorder: VoiceMessageRecorder
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,8 +29,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             HappyChatTheme {
                 ChatScreen(
-                    player = happyChatMediaPlayer,
-                    mediaRecorder = mediaRecorder
+                    voiceMessagePlayer = voiceMessagePlayer,
+                    voiceMessageRecorder = voiceMessageRecorder,
+                    onNavigateBack = { }
                 )
             }
         }
