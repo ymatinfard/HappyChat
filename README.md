@@ -1,8 +1,10 @@
 # HappyChat
 
-HappyChat is a feature-rich Android chat application that allows users to communicate with text messages, share photos, and send voice messages in real-time. *Note: This project includes only the client-side code; no backend functionality is implemented.*
+HappyChat is a feature-rich Android chat application that allows users to communicate with text messages, share photos, and send voice messages in real-time. 
 
-![HappyChat Screenshot](https://github.com/ymatinfard/HappyChat/blob/develop/screenshots/happychat_screenshot.png)
+*Note: This project includes only the client-side code; no backend functionality is implemented.*
+
+<img src = "https://github.com/ymatinfard/HappyChat/blob/develop/screenshots/happychat_screenshot.png" width = 300 height = 600/>
 
 ## Features
 
@@ -13,14 +15,6 @@ HappyChat is a feature-rich Android chat application that allows users to commun
 ## Status
 
 This project is currently **in progress**. New features and updates are being developed and will be released in future versions.
-
-## Screenshot
-
-| Screenshot                                                                                                                   | Description           |
-|------------------------------------------------------------------------------------------------------------------------------|-----------------------|
-| <img src = "https://github.com/ymatinfard/HappyChat/blob/develop/screenshots/happychat_screenshot.png" width=400 height=600) | A preview of the chat interface, demonstrating the user-friendly design and intuitive layout. |
-
-Dimensions: **Width:** 400px, **Height:** 600px.
 
 ## Installation
 
