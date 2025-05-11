@@ -17,10 +17,10 @@ class GrpcGrpcChatRepositoryImpl @Inject constructor(private val grpcClient: GRP
     override fun observeTextMessages(): SharedFlow<ChatMessage> = chatSession.messageFlow
 
     override fun sendTextMessage(message: TextMessage) {
-        chatSession.sendMessage(
-            message.baseMessage.author,
-            "receiveId",
-            message.baseMessage.message
-        )
+//        chatSession.sendMessage(
+//            message.baseMessage.author,
+//            "receiveId",
+//            message.baseMessage.message
+//        )
     }
 }
