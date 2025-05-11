@@ -1,9 +1,10 @@
 package com.matin.happychat.chat
 
-import android.util.Log
+import android.Manifest
+import android.Manifest.permission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.matin.happychat.data.grpc.GrpcChatRepository
+import com.matin.happychat.data.rest.MessageRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,99 +14,149 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ChatViewModel @Inject constructor(private val repository: GrpcChatRepository) : ViewModel() {
+class ChatViewModel @Inject constructor(
+    private val messageRepository: MessageRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     init {
-        // Fake data to represent received messages
-        _uiState.update { state ->
-            state.copy(
-                messages = fakeReceivedMessages
-            )
-        }
+        loadMessages()
+    }
 
+    private fun loadMessages() {
         viewModelScope.launch {
-            repository.observeTextMessages().collect {
-                Log.d("HappyChat", "Messages: " + it.message)
+            val messages = messageRepository.getMessages()
+            _uiState.update { currentState ->
+                currentState.copy(messages = messages)
             }
         }
     }
 
-    fun onSendMessage(message: String) {
-        if (message.trim().isEmpty()) return
-        val newMessage =
-            TextMessage(
-                BaseMessage(
-                    message = message,
-                    author = "me",
-                    timeStamp = System.currentTimeMillis()
+    fun onEvent(event: ChatEvent) {
+        when (event) {
+            is ChatEvent.UpdateMessage -> onUpdateMessage(event.text)
+            is ChatEvent.SendMessage -> onSendMessage()
+            is ChatEvent.SendImageMessage -> onSendImageMessage(event.uri)
+            is ChatEvent.SendVoiceMessage -> onSendVoiceMessage(event.path)
+            is ChatEvent.RequestPermission -> requestPermission(event.permission)
+            is ChatEvent.PermissionResult -> onPermissionResult(event.permissions)
+            is ChatEvent.DismissPhotoPicker -> dismissPhotoPicker()
+            is ChatEvent.SearchClick -> onSearchClick()
+            is ChatEvent.InfoClick -> onInfoClick()
+            is ChatEvent.MessageClick -> onMessageClick(event.messageId)
+        }
+    }
+
+    fun onUpdateMessage(text: String) {
+        _uiState.update { it.copy(currentMessage = text) }
+    }
+
+   private fun onSendMessage() {
+        val currentText = _uiState.value.currentMessage.trim()
+        if (currentText.isNotBlank()) {
+            viewModelScope.launch {
+                messageRepository.sendTextMessage(currentText)
+                // Clear input field after sending
+                _uiState.update {
+                    it.copy(
+                        currentMessage = "",
+                        messages = messageRepository.getMessages()
+                    )
+                }
+            }
+        }
+    }
+
+    fun onSendImageMessage(uri: String) {
+        viewModelScope.launch {
+            messageRepository.sendImageMessage(uri)
+            _uiState.update {
+                it.copy(
+                    isShowingPhotoPicker = false,
+                    messages = messageRepository.getMessages()
                 )
-            )
-        _uiState.update { state ->
-            repository.sendTextMessage(newMessage)
-            updateChatUiState(state, newMessage)
-        }
-    }
-
-    fun onUpdateMessage(newMessage: String) {
-        _uiState.update { state ->
-            state.copy(currentMessage = newMessage)
-        }
-    }
-
-    fun onSendImageMessage(selectedPhotoUri: String) {
-        val newMessage = ImageMessage(
-            baseMessage = BaseMessage("Photo", "me", System.currentTimeMillis()),
-            imageUri = selectedPhotoUri
-        )
-
-        _uiState.update { state ->
-            updateChatUiState(state, newMessage)
+            }
         }
     }
 
     fun onSendVoiceMessage(path: String) {
-        val newMessage = VoiceMessage(
-            voicePath = path,
-            baseMessage = BaseMessage("My voice", "me", System.currentTimeMillis())
-        )
-        _uiState.update { state ->
-            updateChatUiState(state, newMessage)
+        viewModelScope.launch {
+            messageRepository.sendVoiceMessage(path)
+            _uiState.update {
+                it.copy(
+                    messages = messageRepository.getMessages()
+                )
+            }
         }
     }
 
-    private fun updateChatUiState(
-        state: ChatUiState,
-        newMessage: Message,
-    ): ChatUiState {
-        val oldMessages = state.messages
-        return state.copy(messages = oldMessages.add(newMessage), currentMessage = "")
+    fun requestPermission(permission: String) {
+        _uiState.update {
+            it.copy(
+                pendingPermissions = it.pendingPermissions + permission
+            )
+        }
+    }
+
+    fun onPermissionResult(permissions: Map<String, Boolean>) {
+        val newPermissions = _uiState.value.pendingPermissions - permissions.keys
+
+        _uiState.update {
+            it.copy(pendingPermissions = newPermissions)
+        }
+
+        permissions.forEach { (permission, isGranted) ->
+            if (!isGranted) return@forEach
+            when (permission) {
+                Manifest.permission.READ_MEDIA_IMAGES -> {
+                    _uiState
+                        .update { it.copy(isShowingPhotoPicker = true) }
+                }
+
+                Manifest.permission.RECORD_AUDIO -> {
+                    _uiState.update { it.copy(isRecording = true) }
+                }
+            }
+        }
+    }
+
+    fun dismissPhotoPicker() {
+        _uiState.update { it.copy(isShowingPhotoPicker = false) }
+    }
+
+    fun setRecordingState(isRecording: Boolean) {
+        _uiState.update { it.copy(isRecording = isRecording) }
+    }
+
+    fun onSearchClick() {
+    }
+
+    fun onInfoClick() {
+    }
+
+    fun onMessageClick(messageId: Long) {
     }
 }
-
-fun List<Message>.add(message: Message) =
-    this.toMutableList().apply { add(index = 0, element = message) }
 
 data class ChatUiState(
     val messages: List<Message> = emptyList(),
     val currentMessage: String = "",
+    val isRecording: Boolean = false,
+    val isShowingPhotoPicker: Boolean = false,
+    val pendingPermissions: Set<String> = emptySet()
 )
 
-val fakeReceivedMessages = listOf(
-    TextMessage(
-        baseMessage = BaseMessage(
-            message = "How are you?",
-            author = "you",
-            timeStamp = System.currentTimeMillis() + 123
-        )
-    ),
-    TextMessage(
-        baseMessage = BaseMessage(
-            message = "Hi",
-            author = "you",
-            timeStamp = System.currentTimeMillis()
-        )
-    ),
-)
+sealed class ChatEvent {
+    data class UpdateMessage(val text: String) : ChatEvent()
+    object SendMessage : ChatEvent()
+    data class SendImageMessage(val uri: String) : ChatEvent()
+    data class SendVoiceMessage(val path: String) : ChatEvent()
+    data class RequestPermission(val permission: String) : ChatEvent()
+    data class PermissionResult(val permissions: Map<String, Boolean>) : ChatEvent()
+    object DismissPhotoPicker : ChatEvent()
+    object SearchClick : ChatEvent()
+    object InfoClick : ChatEvent()
+    data class MessageClick(val messageId: Long) : ChatEvent()
+}
