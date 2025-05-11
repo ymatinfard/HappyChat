@@ -1,0 +1,15 @@
+ syntax = "proto3";
+
+option java_package = "com.matin.happychat";
+option java_multiple_files = true;
+
+message ChatMessage {
+  string senderId = 1;
+  string receiverId = 2;
+  string message = 3;
+  string timeStamp = 4;
+}
+
+service ChatService {
+  rpc ChatStream(stream ChatMessage) returns (stream ChatMessage);
+}
