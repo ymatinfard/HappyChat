@@ -41,9 +41,6 @@ private const val INPUT_ICON_SIZE = 32
 private const val RECORDING_ANIMATION_DURATION = 500
 private const val MESSAGE_INPUT_TEXT_SIZE = 22
 
-/**
- * Message input bar at the bottom of the chat screen
- */
 @Composable
 fun MessageInputBar(
     message: String,
@@ -97,9 +94,6 @@ fun MessageInputBar(
     }
 }
 
-/**
- * Text field for entering messages
- */
 @Composable
 private fun MessageTextField(
     value: String,
@@ -140,9 +134,6 @@ private fun MessageTextField(
     )
 }
 
-/**
- * Button for attaching media files
- */
 @Composable
 private fun AttachmentButton(onClick: () -> Unit) {
     Icon(

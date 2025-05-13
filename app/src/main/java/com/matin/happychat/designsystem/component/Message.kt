@@ -60,9 +60,6 @@ private const val VOICE_PLAYBACK_UPDATE_INTERVAL = 300L
 private const val MESSAGE_TEXT_SIZE = 18
 internal const val TIMESTAMP_TEXT_SIZE = 14
 
-/**
- * Displays the list of messages
- */
 @Composable
 fun MessageList(
     modifier: Modifier,
@@ -91,9 +88,6 @@ fun MessageList(
     }
 }
 
-/**
- * A single message item in the list
- */
 @Composable
 private fun MessageItem(
     message: Message,
