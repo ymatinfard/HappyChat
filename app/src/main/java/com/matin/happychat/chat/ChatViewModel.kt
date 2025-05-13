@@ -1,10 +1,10 @@
 package com.matin.happychat.chat
 
 import android.Manifest
-import android.Manifest.permission
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.matin.happychat.data.rest.MessageRepository
+import com.matin.happychat.domain.Message
+import com.matin.happychat.domain.MessageRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

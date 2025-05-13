@@ -1,0 +1,24 @@
+package com.matin.happychat.data.local
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.matin.happychat.common.model.MessageState
+import com.matin.happychat.data.model.MessageEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface MessageDao {
+
+    @Insert
+    fun insertMessage(message: MessageEntity)
+
+    @Query("SELECT * FROM messages ORDER BY timestamp DESC")
+    fun getAllMessages(): Flow<List<MessageEntity>>
+
+    @Query("UPDATE messages SET state = :newState WHERE id = :messageId")
+    fun updateMessageState(messageId: Long, newState: MessageState)
+
+    @Query("DELETE FROM messages")
+    fun deleteAllMessages()
+}

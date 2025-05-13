@@ -1,9 +1,10 @@
-package com.matin.happychat.chat
+package com.matin.happychat.domain
 
 import android.net.Uri
-import com.matin.happychat.chat.Message.Companion.CURRENT_USER_ID
+import com.matin.happychat.domain.Message.Companion.CURRENT_USER_ID
 import com.matin.happychat.common.model.MessageState
 import com.matin.happychat.common.model.MessageType
+import com.matin.happychat.data.model.MessageEntity
 import java.time.Instant
 import java.util.UUID
 
@@ -74,7 +75,7 @@ data class VoiceMessage(
 object MessageFactory {
     fun createTextMessage(
         content: String,
-        author: String = Message.CURRENT_USER_ID
+        author: String = CURRENT_USER_ID
     ): TextMessage {
         return TextMessage(
             content = content,
@@ -85,7 +86,7 @@ object MessageFactory {
     fun createImageMessage(
         imageUri: String,
         caption: String = "",
-        author: String = Message.CURRENT_USER_ID
+        author: String = CURRENT_USER_ID
     ): ImageMessage {
         return ImageMessage(
             content = caption,
@@ -98,7 +99,7 @@ object MessageFactory {
         voicePath: Uri,
         durationMs: Long,
         transcription: String = "",
-        author: String = Message.CURRENT_USER_ID
+        author: String = CURRENT_USER_ID
     ): VoiceMessage {
         return VoiceMessage(
             content = transcription,
@@ -107,4 +108,15 @@ object MessageFactory {
             author = author
         )
     }
+}
+
+fun TextMessage.toEntity(): MessageEntity  {
+    return MessageEntity(
+        id = id,
+        content = content,
+        author = author,
+        timestamp = createdAt,
+        type = type,
+        state = state
+    )
 }

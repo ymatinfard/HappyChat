@@ -1,7 +1,7 @@
 package com.matin.happychat.data.grpc
 
 import com.matin.happychat.ChatMessage
-import com.matin.happychat.chat.TextMessage
+import com.matin.happychat.domain.TextMessage
 import kotlinx.coroutines.flow.SharedFlow
 import javax.inject.Inject
 

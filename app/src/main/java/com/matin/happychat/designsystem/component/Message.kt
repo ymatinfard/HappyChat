@@ -41,10 +41,10 @@ import androidx.media3.common.Player
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.matin.happychat.R
-import com.matin.happychat.chat.ImageMessage
-import com.matin.happychat.chat.Message
-import com.matin.happychat.chat.TextMessage
-import com.matin.happychat.chat.VoiceMessage
+import com.matin.happychat.domain.ImageMessage
+import com.matin.happychat.domain.Message
+import com.matin.happychat.domain.TextMessage
+import com.matin.happychat.domain.VoiceMessage
 import com.matin.happychat.mediaplayer.VoiceMessagePlayer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -144,7 +144,7 @@ private fun TextMessageContent(message: TextMessage) {
             fontSize = MESSAGE_TEXT_SIZE.sp,
         )
         MessageTimeStamp(
-            timeStamp = message.timestamp,
+            timeStamp = message.createdAt,
             isFromCurrentUser = message.isFromCurrentUser,
             modifier = Modifier.align(alignment = Alignment.End)
         )
@@ -263,7 +263,7 @@ private fun VoiceMessageContent(
             }
 
             MessageTimeStamp(
-                timeStamp = message.timestamp,
+                timeStamp = message.createdAt,
                 isFromCurrentUser = message.isFromCurrentUser,
                 modifier = Modifier.align(alignment = Alignment.End)
             )
