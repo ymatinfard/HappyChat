@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.android.hilt)
     alias(libs.plugins.protobuf)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -102,7 +103,9 @@ dependencies {
     implementation(libs.javax.annotation.api)
     implementation(libs.androidx.hilt.navigation.compose)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
-
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     ksp(libs.android.hilt.compiler)
 
     testImplementation(libs.junit)
