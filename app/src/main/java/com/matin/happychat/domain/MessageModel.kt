@@ -1,40 +1,27 @@
 package com.matin.happychat.domain
 
 import android.net.Uri
-import com.matin.happychat.domain.Message.Companion.CURRENT_USER_ID
 import com.matin.happychat.common.model.MessageState
 import com.matin.happychat.common.model.MessageType
 import com.matin.happychat.data.model.MessageEntity
+import com.matin.happychat.data.model.MessageNetwork
 import java.time.Instant
 import java.util.UUID
 
-/**
- * Base message interface with common properties
- */
-interface Message {
-    val id: Long
-    val content: String
-    val author: String
-    val createdAt: Long
-    val type: MessageType
-    val state: MessageState
-    val isFromCurrentUser: Boolean
-        get() = author == CURRENT_USER_ID
-
-    companion object {
-        const val CURRENT_USER_ID = "me"
-    }
-}
+const val CURRENT_USER_ID = "me"
 
 abstract class BaseMessage(
-    override val id: Long = UUID.randomUUID().timestamp(),
-    override val content: String = "",
-    override val author: String = CURRENT_USER_ID,
-    override val createdAt: Long = Instant.now().toEpochMilli(),
-    override val state: MessageState,
-) : Message
+    open val id: Long = UUID.randomUUID().timestamp(),
+    open val content: String = "",
+    open val author: String = CURRENT_USER_ID,
+    open val createdAt: Long = Instant.now().toEpochMilli(),
+    open val state: MessageState,
+) {
+    abstract val type: MessageType
+    val isFromCurrentUser: Boolean = (author == CURRENT_USER_ID)
+}
 
-data class TextMessage(
+data class Message(
     override val id: Long = UUID.randomUUID().timestamp(),
     override val content: String,
     override val author: String = CURRENT_USER_ID,
@@ -69,48 +56,50 @@ data class VoiceMessage(
     override val type: MessageType = MessageType.VOICE
 }
 
+
 /**
  * Factory methods to create messages
  */
 object MessageFactory {
-    fun createTextMessage(
+    fun createMessage(
         content: String,
         author: String = CURRENT_USER_ID
-    ): TextMessage {
-        return TextMessage(
+    ): Message {
+        return Message(
             content = content,
             author = author,
         )
     }
-
-    fun createImageMessage(
-        imageUri: String,
-        caption: String = "",
-        author: String = CURRENT_USER_ID
-    ): ImageMessage {
-        return ImageMessage(
-            content = caption,
-            imageUri = imageUri,
-            author = author
-        )
-    }
-
-    fun createVoiceMessage(
-        voicePath: Uri,
-        durationMs: Long,
-        transcription: String = "",
-        author: String = CURRENT_USER_ID
-    ): VoiceMessage {
-        return VoiceMessage(
-            content = transcription,
-            voicePath = voicePath,
-            durationMs = durationMs,
-            author = author
-        )
-    }
 }
 
-fun TextMessage.toEntity(): MessageEntity  {
+//    fun createImageMessage(
+//        imageUri: String,
+//        caption: String = "",
+//        author: String = CURRENT_USER_ID
+//    ): ImageMessage {
+//        return ImageMessage(
+//            content = caption,
+//            imageUri = imageUri,
+//            author = author
+//        )
+//    }
+//
+//    fun createVoiceMessage(
+//        voicePath: Uri,
+//        durationMs: Long,
+//        transcription: String = "",
+//        author: String = CURRENT_USER_ID
+//    ): VoiceMessage {
+//        return VoiceMessage(
+//            content = transcription,
+//            voicePath = voicePath,
+//            durationMs = durationMs,
+//            author = author
+//        )
+//    }
+
+
+fun Message.toEntity(): MessageEntity {
     return MessageEntity(
         id = id,
         content = content,
@@ -118,5 +107,43 @@ fun TextMessage.toEntity(): MessageEntity  {
         timestamp = createdAt,
         type = type,
         state = state
+    )
+}
+
+fun Message.toNetwork(): MessageNetwork {
+    return MessageNetwork(
+        id = id,
+        content = content,
+        author = author,
+        createdAt = createdAt,
+    )
+}
+
+fun MessageNetwork.toEntity(): MessageEntity {
+    return MessageEntity(
+        id = id,
+        content = content,
+        author = author,
+        type = MessageType.TEXT,
+        state = MessageState.SENT,
+        timestamp = createdAt
+    )
+}
+
+fun MessageEntity.toDomain(): Message {
+    return Message(
+        id = id,
+        content = content,
+        author = author,
+        createdAt = timestamp,
+    )
+}
+
+fun MessageEntity.toNetwork(): MessageNetwork {
+    return MessageNetwork(
+        id = id,
+        content = content,
+        author = author,
+        createdAt = timestamp,
     )
 }

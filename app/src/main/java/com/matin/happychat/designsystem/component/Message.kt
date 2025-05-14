@@ -41,9 +41,7 @@ import androidx.media3.common.Player
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.matin.happychat.R
-import com.matin.happychat.domain.ImageMessage
 import com.matin.happychat.domain.Message
-import com.matin.happychat.domain.TextMessage
 import com.matin.happychat.domain.VoiceMessage
 import com.matin.happychat.mediaplayer.VoiceMessagePlayer
 import kotlinx.coroutines.delay
@@ -129,14 +127,14 @@ private fun MessageContent(
     onMessageClick: () -> Unit
 ) {
     when (message) {
-        is TextMessage -> TextMessageContent(message)
-        is ImageMessage -> ImageMessageContent(message.imageUri)
-        is VoiceMessage -> VoiceMessageContent(message, playerController)
+        is Message -> TextMessageContent(message)
+//        is ImageMessage -> ImageMessageContent(message.imageUri)
+//        is VoiceMessage -> VoiceMessageContent(message, playerController)
     }
 }
 
 @Composable
-private fun TextMessageContent(message: TextMessage) {
+private fun TextMessageContent(message: Message) {
     Column(verticalArrangement = Arrangement.Bottom) {
         Text(
             text = message.content,
@@ -193,24 +191,6 @@ private fun VoiceMessageContent(
             progress = currentProgress
         }
     }
-
-    // Handle player state changes
-//    DisposableEffect(voicePath) {
-//        val listener = object : MediaPlayerController.PlayerStateListener {
-//            override fun onStateChanged(newState: MediaPlayerController.PlayerState) {
-//                isPlaying = newState == MediaPlayerController.PlayerState.PLAYING
-//                if (newState == MediaPlayerController.PlayerState.COMPLETED) {
-//                    progress = 0L
-//                }
-//            }
-//        }
-//
-//        playerController.addStateListener(voicePath, listener)
-//
-//        onDispose {
-//            playerController.removeStateListener(voicePath, listener)
-//        }
-//    }
 
     Box(
         modifier = Modifier

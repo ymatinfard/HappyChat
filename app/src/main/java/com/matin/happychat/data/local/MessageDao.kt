@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 interface MessageDao {
 
     @Insert
-    fun insertMessage(message: MessageEntity)
+    fun insertMessageToDb(message: MessageEntity)
 
     @Query("SELECT * FROM messages ORDER BY timestamp DESC")
     fun getAllMessages(): Flow<List<MessageEntity>>
@@ -21,4 +21,7 @@ interface MessageDao {
 
     @Query("DELETE FROM messages")
     fun deleteAllMessages()
+
+    @Query("SELECT * FROM messages WHERE state = 'FAILED'")
+    fun getFailedMessages(): List<MessageEntity>
 }

@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,10 +28,17 @@ class ChatViewModel @Inject constructor(
 
     private fun loadMessages() {
         viewModelScope.launch {
-            val messages = messageRepository.getMessages()
-            _uiState.update { currentState ->
-                currentState.copy(messages = messages)
-            }
+            messageRepository.getMessages()
+                .catch { e ->
+                    _uiState.update { currentState ->
+                        currentState.copy(messages = emptyList())
+                    }
+                }
+                .collect { messages ->
+                    _uiState.update { currentState ->
+                        currentState.copy(messages = messages)
+                    }
+                }
         }
     }
 
@@ -53,16 +61,15 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(currentMessage = text) }
     }
 
-   private fun onSendMessage() {
+    private fun onSendMessage() {
         val currentText = _uiState.value.currentMessage.trim()
         if (currentText.isNotBlank()) {
             viewModelScope.launch {
-                messageRepository.sendTextMessage(currentText)
+                messageRepository.insertToDb(currentText)
                 // Clear input field after sending
                 _uiState.update {
                     it.copy(
                         currentMessage = "",
-                        messages = messageRepository.getMessages()
                     )
                 }
             }
@@ -70,26 +77,11 @@ class ChatViewModel @Inject constructor(
     }
 
     fun onSendImageMessage(uri: String) {
-        viewModelScope.launch {
-            messageRepository.sendImageMessage(uri)
-            _uiState.update {
-                it.copy(
-                    isShowingPhotoPicker = false,
-                    messages = messageRepository.getMessages()
-                )
-            }
-        }
+
     }
 
     fun onSendVoiceMessage(path: String) {
-        viewModelScope.launch {
-            messageRepository.sendVoiceMessage(path)
-            _uiState.update {
-                it.copy(
-                    messages = messageRepository.getMessages()
-                )
-            }
-        }
+
     }
 
     fun requestPermission(permission: String) {
