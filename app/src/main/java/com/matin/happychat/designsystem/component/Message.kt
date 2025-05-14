@@ -55,7 +55,7 @@ private const val IMAGE_MESSAGE_HEIGHT = 300
 private const val VOICE_MESSAGE_WIDTH = 300
 private const val VOICE_PLAYER_ICON_SIZE = 42
 private const val VOICE_PLAYBACK_UPDATE_INTERVAL = 300L
-private const val MESSAGE_TEXT_SIZE = 18
+private const val MESSAGE_TEXT_SIZE = 20
 internal const val TIMESTAMP_TEXT_SIZE = 14
 
 @Composable
@@ -64,7 +64,7 @@ fun MessageList(
     messages: List<Message>,
     listState: LazyListState,
     playerController: VoiceMessagePlayer,
-    onMessageClick: (Long) -> Unit
+    onMessageClick: (String) -> Unit
 ) {
     Box(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
