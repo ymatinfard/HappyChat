@@ -8,6 +8,7 @@ import com.matin.happychat.data.grpc.GrpcChatRepository
 import com.matin.happychat.data.grpc.GrpcGrpcChatRepositoryImpl
 import com.matin.happychat.data.local.ChatDatabase
 import com.matin.happychat.data.local.MessageDao
+import com.matin.happychat.data.rest.ChatApi
 import com.matin.happychat.domain.MessageRepository
 import com.matin.happychat.mediaplayer.AudioFileStorage
 import com.matin.happychat.mediaplayer.ExternalAudioFileStorage
@@ -19,6 +20,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -34,11 +37,12 @@ object AppProvidesModule {
 
     @Provides
     @Singleton
-    fun provideDb(@ApplicationContext applicationContext: Context): ChatDatabase = Room.databaseBuilder(
-        applicationContext,
-        ChatDatabase::class.java,
-        "chat_database"
-    ).build()
+    fun provideDb(@ApplicationContext applicationContext: Context): ChatDatabase =
+        Room.databaseBuilder(
+            applicationContext,
+            ChatDatabase::class.java,
+            "chat_database"
+        ).build()
 
     @Provides
     @Singleton
@@ -51,6 +55,15 @@ object AppProvidesModule {
     @Provides
     @MainDispatcher
     fun provideCoroutineMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(): ChatApi =
+        Retrofit.Builder()
+            .baseUrl("http://10.0.2.2:5005/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ChatApi::class.java)
 }
 
 @Module
