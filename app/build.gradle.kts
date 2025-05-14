@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.matin.happychat"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.matin.happychat"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -35,6 +35,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "1.8"
@@ -79,7 +80,6 @@ protobuf {
 
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -101,6 +101,7 @@ dependencies {
     implementation(libs.grpc.stub)
     implementation(libs.javax.annotation.api)
     implementation(libs.androidx.hilt.navigation.compose)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     ksp(libs.android.hilt.compiler)
 
