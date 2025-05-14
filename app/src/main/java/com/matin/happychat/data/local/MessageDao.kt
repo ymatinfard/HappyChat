@@ -17,7 +17,7 @@ interface MessageDao {
     fun getAllMessages(): Flow<List<MessageEntity>>
 
     @Query("UPDATE messages SET state = :newState WHERE id = :messageId")
-    fun updateMessageState(messageId: Long, newState: MessageState)
+    fun updateMessageState(messageId: String, newState: MessageState)
 
     @Query("DELETE FROM messages")
     fun deleteAllMessages()

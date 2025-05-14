@@ -1,28 +1,30 @@
 package com.matin.happychat.domain
 
 import android.net.Uri
+import com.matin.happychat.common.model.ChatIdGenerator
 import com.matin.happychat.common.model.MessageState
 import com.matin.happychat.common.model.MessageType
 import com.matin.happychat.data.model.MessageEntity
-import com.matin.happychat.data.model.MessageNetwork
+import com.matin.happychat.data.model.MessageNetworkResponse
 import java.time.Instant
-import java.util.UUID
 
 const val CURRENT_USER_ID = "me"
+const val SERVER_USER_ID = "server"
 
 abstract class BaseMessage(
-    open val id: Long = UUID.randomUUID().timestamp(),
+    open val id: String = ChatIdGenerator.nextId(),
     open val content: String = "",
     open val author: String = CURRENT_USER_ID,
     open val createdAt: Long = Instant.now().toEpochMilli(),
     open val state: MessageState,
 ) {
     abstract val type: MessageType
-    val isFromCurrentUser: Boolean = (author == CURRENT_USER_ID)
+    val isFromCurrentUser: Boolean
+        get() = author == CURRENT_USER_ID
 }
 
 data class Message(
-    override val id: Long = UUID.randomUUID().timestamp(),
+    override val id: String = ChatIdGenerator.nextId(),
     override val content: String,
     override val author: String = CURRENT_USER_ID,
     override val createdAt: Long = Instant.now().toEpochMilli(),
@@ -32,7 +34,7 @@ data class Message(
 }
 
 data class ImageMessage(
-    override val id: Long = UUID.randomUUID().timestamp(),
+    override val id: String = ChatIdGenerator.nextId(),
     override val content: String = "", // Optional caption
     override val author: String = CURRENT_USER_ID,
     override val createdAt: Long = Instant.now().toEpochMilli(),
@@ -45,7 +47,7 @@ data class ImageMessage(
 }
 
 data class VoiceMessage(
-    override val id: Long = UUID.randomUUID().timestamp(),
+    override val id: String = ChatIdGenerator.nextId(),
     override val content: String = "", // Optional transcription
     override val author: String = CURRENT_USER_ID,
     override val createdAt: Long = Instant.now().toEpochMilli(),
@@ -110,37 +112,19 @@ fun Message.toEntity(): MessageEntity {
     )
 }
 
-fun Message.toNetwork(): MessageNetwork {
-    return MessageNetwork(
-        id = id,
-        content = content,
-        author = author,
-        createdAt = createdAt,
-    )
-}
-
-fun MessageNetwork.toEntity(): MessageEntity {
+fun MessageNetworkResponse.toEntity(): MessageEntity {
     return MessageEntity(
-        id = id,
-        content = content,
-        author = author,
+        id = ChatIdGenerator.nextId(),
+        content = text,
+        author = SERVER_USER_ID,
+        timestamp = Instant.now().toEpochMilli(),
         type = MessageType.TEXT,
-        state = MessageState.SENT,
-        timestamp = createdAt
+        state = MessageState.SENT
     )
 }
 
 fun MessageEntity.toDomain(): Message {
     return Message(
-        id = id,
-        content = content,
-        author = author,
-        createdAt = timestamp,
-    )
-}
-
-fun MessageEntity.toNetwork(): MessageNetwork {
-    return MessageNetwork(
         id = id,
         content = content,
         author = author,

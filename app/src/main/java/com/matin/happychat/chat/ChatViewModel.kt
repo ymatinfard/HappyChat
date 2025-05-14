@@ -128,7 +128,7 @@ class ChatViewModel @Inject constructor(
     fun onInfoClick() {
     }
 
-    fun onMessageClick(messageId: Long) {
+    fun onMessageClick(messageId: String) {
     }
 }
 
@@ -150,5 +150,5 @@ sealed class ChatEvent {
     object DismissPhotoPicker : ChatEvent()
     object SearchClick : ChatEvent()
     object InfoClick : ChatEvent()
-    data class MessageClick(val messageId: Long) : ChatEvent()
+    data class MessageClick(val messageId: String) : ChatEvent()
 }
