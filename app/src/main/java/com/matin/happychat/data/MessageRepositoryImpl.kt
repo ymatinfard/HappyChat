@@ -3,16 +3,17 @@ package com.matin.happychat.data
 import android.util.Log
 import com.matin.happychat.common.model.MessageState
 import com.matin.happychat.data.local.MessageDao
-import com.matin.happychat.data.rest.MessageApi
+import com.matin.happychat.data.model.MessageRequest
+import com.matin.happychat.data.rest.ChatApi
 import com.matin.happychat.di.IoDispatcher
 import com.matin.happychat.domain.Message
 import com.matin.happychat.domain.MessageFactory.createMessage
 import com.matin.happychat.domain.MessageRepository
 import com.matin.happychat.domain.toDomain
 import com.matin.happychat.domain.toEntity
-import com.matin.happychat.domain.toNetwork
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -25,11 +26,11 @@ import javax.inject.Inject
 
 class MessageRepositoryImpl @Inject constructor(
     private val messageDao: MessageDao,
-    private val messageApi: MessageApi,
+    private val chatApi: ChatApi,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
-    private val externalSupervisorScope: CoroutineScope
 ) : MessageRepository {
 
+    private val externalSupervisorScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
     private val pendingMessages = Channel<Message>(Channel.BUFFERED)
     private val semaphore = Semaphore(5)
 
@@ -84,10 +85,14 @@ class MessageRepositoryImpl @Inject constructor(
 
     private suspend fun sendToServer(message: Message) = withContext(ioDispatcher) {
         try {
-            val result = messageApi.sendMessage(message.toNetwork())
+            val messageRequest = MessageRequest(
+                sender = message.author,
+                message = message.content
+            )
+            val responseMessage = chatApi.sendMessage(messageRequest)
 
             updateMessageState(message.id, MessageState.SENT)
-            messageDao.insertMessageToDb(result.toEntity())
+            messageDao.insertMessageToDb(responseMessage.first().toEntity())
         } catch (e: Exception) {
             try {
                 updateMessageState(message.id, MessageState.FAILED)
@@ -97,7 +102,7 @@ class MessageRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun updateMessageState(messageId: Long, newState: MessageState) {
+    private fun updateMessageState(messageId: String, newState: MessageState) {
         messageDao.updateMessageState(messageId, newState)
     }
 }
