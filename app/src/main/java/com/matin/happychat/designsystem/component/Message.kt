@@ -1,6 +1,7 @@
 package com.matin.happychat.designsystem.component
 
 import MediaUtils
+import MessageTimeStamp
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -40,10 +41,8 @@ import androidx.media3.common.Player
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.matin.happychat.R
-import com.matin.happychat.chat.ImageMessage
-import com.matin.happychat.chat.Message
-import com.matin.happychat.chat.TextMessage
-import com.matin.happychat.chat.VoiceMessage
+import com.matin.happychat.domain.Message
+import com.matin.happychat.domain.VoiceMessage
 import com.matin.happychat.mediaplayer.VoiceMessagePlayer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -56,19 +55,16 @@ private const val IMAGE_MESSAGE_HEIGHT = 300
 private const val VOICE_MESSAGE_WIDTH = 300
 private const val VOICE_PLAYER_ICON_SIZE = 42
 private const val VOICE_PLAYBACK_UPDATE_INTERVAL = 300L
-private const val MESSAGE_TEXT_SIZE = 18
-private const val TIMESTAMP_TEXT_SIZE = 14
+private const val MESSAGE_TEXT_SIZE = 20
+internal const val TIMESTAMP_TEXT_SIZE = 14
 
-/**
- * Displays the list of messages
- */
 @Composable
 fun MessageList(
     modifier: Modifier,
     messages: List<Message>,
     listState: LazyListState,
     playerController: VoiceMessagePlayer,
-    onMessageClick: (Long) -> Unit
+    onMessageClick: (String) -> Unit
 ) {
     Box(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
@@ -90,9 +86,6 @@ fun MessageList(
     }
 }
 
-/**
- * A single message item in the list
- */
 @Composable
 private fun MessageItem(
     message: Message,
@@ -134,14 +127,14 @@ private fun MessageContent(
     onMessageClick: () -> Unit
 ) {
     when (message) {
-        is TextMessage -> TextMessageContent(message)
-        is ImageMessage -> ImageMessageContent(message.imageUri)
-        is VoiceMessage -> VoiceMessageContent(message, playerController)
+        is Message -> TextMessageContent(message)
+//        is ImageMessage -> ImageMessageContent(message.imageUri)
+//        is VoiceMessage -> VoiceMessageContent(message, playerController)
     }
 }
 
 @Composable
-private fun TextMessageContent(message: TextMessage) {
+private fun TextMessageContent(message: Message) {
     Column(verticalArrangement = Arrangement.Bottom) {
         Text(
             text = message.content,
@@ -149,7 +142,7 @@ private fun TextMessageContent(message: TextMessage) {
             fontSize = MESSAGE_TEXT_SIZE.sp,
         )
         MessageTimeStamp(
-            timeStamp = message.timestamp,
+            timeStamp = message.createdAt,
             isFromCurrentUser = message.isFromCurrentUser,
             modifier = Modifier.align(alignment = Alignment.End)
         )
@@ -198,24 +191,6 @@ private fun VoiceMessageContent(
             progress = currentProgress
         }
     }
-
-    // Handle player state changes
-//    DisposableEffect(voicePath) {
-//        val listener = object : MediaPlayerController.PlayerStateListener {
-//            override fun onStateChanged(newState: MediaPlayerController.PlayerState) {
-//                isPlaying = newState == MediaPlayerController.PlayerState.PLAYING
-//                if (newState == MediaPlayerController.PlayerState.COMPLETED) {
-//                    progress = 0L
-//                }
-//            }
-//        }
-//
-//        playerController.addStateListener(voicePath, listener)
-//
-//        onDispose {
-//            playerController.removeStateListener(voicePath, listener)
-//        }
-//    }
 
     Box(
         modifier = Modifier
@@ -268,34 +243,13 @@ private fun VoiceMessageContent(
             }
 
             MessageTimeStamp(
-                timeStamp = message.timestamp,
+                timeStamp = message.createdAt,
                 isFromCurrentUser = message.isFromCurrentUser,
                 modifier = Modifier.align(alignment = Alignment.End)
             )
         }
     }
 }
-
-@Composable
-private fun MessageTimeStamp(
-    timeStamp: Long,
-    isFromCurrentUser: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = formatTimestamp(timeStamp),
-        fontSize = TIMESTAMP_TEXT_SIZE.sp,
-        color = chooseOnSurfaceColorFor(isFromCurrentUser),
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun chooseOnSurfaceColorFor(isFromCurrentUser: Boolean) =
-    if (isFromCurrentUser)
-        MaterialTheme.colorScheme.onTertiary
-    else
-        MaterialTheme.colorScheme.onPrimary
 
 /**
  * Creates a flow that emits playback progress updates
@@ -319,11 +273,4 @@ private fun formatDuration(durationMs: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return String.format("%02d:%02d", minutes, seconds)
-}
-
-/**
- * Format timestamp for display
- */
-private fun formatTimestamp(timestamp: Long): String {
-    return "12:34 PM" // Placeholder
 }

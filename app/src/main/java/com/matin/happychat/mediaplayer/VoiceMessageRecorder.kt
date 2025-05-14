@@ -13,34 +13,22 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Interface for audio recording operations
- */
 interface AudioRecorder {
     fun startRecording()
     fun stopRecording(): String?
     fun release()
 }
 
-/**
- * Interface for file storage operations
- */
 interface AudioFileStorage {
     fun createOutputFile(): File
 }
 
-/**
- * Configuration for the audio recorder
- */
 data class AudioRecorderConfig(
     val audioSource: Int = MediaRecorder.AudioSource.MIC,
     val outputFormat: Int = MediaRecorder.OutputFormat.THREE_GPP,
     val audioEncoder: Int = MediaRecorder.AudioEncoder.AMR_NB,
 )
 
-/**
- * Implementation of AudioFileStorage for Android external storage
- */
 @Singleton
 class ExternalAudioFileStorage @Inject constructor(
     @ApplicationContext private val context: Context
@@ -59,9 +47,6 @@ class ExternalAudioFileStorage @Inject constructor(
     private fun generateUniqueFileName(): String = dateFormatter.format(Date())
 }
 
-/**
- * Implementation of AudioRecorder using MediaRecorder
- */
 @Singleton
 class VoiceMessageRecorder @Inject constructor(
     private val fileStorage: AudioFileStorage,

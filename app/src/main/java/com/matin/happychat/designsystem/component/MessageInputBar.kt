@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Icon
@@ -40,9 +41,6 @@ private const val INPUT_ICON_SIZE = 32
 private const val RECORDING_ANIMATION_DURATION = 500
 private const val MESSAGE_INPUT_TEXT_SIZE = 22
 
-/**
- * Message input bar at the bottom of the chat screen
- */
 @Composable
 fun MessageInputBar(
     message: String,
@@ -67,6 +65,7 @@ fun MessageInputBar(
             MessageTextField(
                 value = message,
                 onValueChange = onMessageChange,
+                onSendClick = onSendClick,
                 modifier = Modifier.weight(1f)
             )
 
@@ -95,19 +94,18 @@ fun MessageInputBar(
     }
 }
 
-/**
- * Text field for entering messages
- */
 @Composable
 private fun MessageTextField(
     value: String,
     onValueChange: (String) -> Unit,
+    onSendClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     TextField(
         modifier = modifier,
         value = value,
         onValueChange = onValueChange,
+        maxLines = 1,
         colors = TextFieldDefaults.colors(
             cursorColor = MaterialTheme.colorScheme.onPrimary,
             focusedTextColor = MaterialTheme.colorScheme.onPrimary,
@@ -119,9 +117,13 @@ private fun MessageTextField(
             fontSize = MESSAGE_INPUT_TEXT_SIZE.sp,
             color = MaterialTheme.colorScheme.onPrimary
         ),
-        keyboardOptions = KeyboardOptions.Default.copy(
-            imeAction = ImeAction.Send  // For chat input
+        keyboardOptions = KeyboardOptions(
+            imeAction = ImeAction.Done  // For chat input
         ),
+        keyboardActions = KeyboardActions(
+            onDone = { onSendClick() }
+        )
+        ,
         placeholder = {
             Text(
                 text = "Type a message...",
@@ -132,9 +134,6 @@ private fun MessageTextField(
     )
 }
 
-/**
- * Button for attaching media files
- */
 @Composable
 private fun AttachmentButton(onClick: () -> Unit) {
     Icon(
