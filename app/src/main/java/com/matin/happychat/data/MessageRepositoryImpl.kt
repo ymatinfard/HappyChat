@@ -1,25 +1,103 @@
 package com.matin.happychat.data
 
+import android.util.Log
+import com.matin.happychat.common.model.MessageState
+import com.matin.happychat.data.local.MessageDao
+import com.matin.happychat.data.rest.MessageApi
+import com.matin.happychat.di.IoDispatcher
 import com.matin.happychat.domain.Message
-import com.matin.happychat.domain.MessageFactory.createTextMessage
+import com.matin.happychat.domain.MessageFactory.createMessage
 import com.matin.happychat.domain.MessageRepository
+import com.matin.happychat.domain.toDomain
+import com.matin.happychat.domain.toEntity
+import com.matin.happychat.domain.toNetwork
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class MessageRepositoryImpl @Inject constructor(): MessageRepository {
-    val messages = mutableListOf<Message>()
-    override suspend fun getMessages(): List<Message> {
-        return messages
+class MessageRepositoryImpl @Inject constructor(
+    private val messageDao: MessageDao,
+    private val messageApi: MessageApi,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val externalSupervisorScope: CoroutineScope
+) : MessageRepository {
+
+    private val pendingMessages = Channel<Message>(Channel.BUFFERED)
+    private val semaphore = Semaphore(5)
+
+    init {
+        externalSupervisorScope.launch {
+            processPendingMessages()
+        }
     }
 
-    override suspend fun sendTextMessage(text: String) {
-        messages.add(createTextMessage(text))
+    override suspend fun getMessages(): Flow<List<Message>> {
+        return messageDao.getAllMessages().distinctUntilChanged()
+            .map { entityList -> entityList.map { it.toDomain() } }
     }
 
-    override suspend fun sendImageMessage(uri: String) {
-        TODO("Not yet implemented")
+    override suspend fun insertToDb(text: String) {
+        try {
+            val message = createMessage(text)
+            withContext(ioDispatcher) {
+                messageDao.insertMessageToDb(message.toEntity())
+            }
+            pendingMessages.send(message)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
-    override suspend fun sendVoiceMessage(path: String) {
-        TODO("Not yet implemented")
+    private suspend fun processPendingMessages() {
+        for (message in pendingMessages) {
+            externalSupervisorScope.launch {
+                semaphore.withPermit {
+                    sendToServer(message)
+                }
+            }
+        }
+    }
+
+    suspend fun retryFailedMessages() {
+        try {
+            val failedMessages: List<Message> = withContext(ioDispatcher) {
+                messageDao.getFailedMessages().map { it.toDomain() }
+            }
+
+            for (message in failedMessages) {
+                externalSupervisorScope.launch {
+                    sendToServer(message)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private suspend fun sendToServer(message: Message) = withContext(ioDispatcher) {
+        try {
+            val result = messageApi.sendMessage(message.toNetwork())
+
+            updateMessageState(message.id, MessageState.SENT)
+            messageDao.insertMessageToDb(result.toEntity())
+        } catch (e: Exception) {
+            try {
+                updateMessageState(message.id, MessageState.FAILED)
+            } catch (e: Exception) {
+                Log.e("MessageRepository", "Failed to update message state in DB")
+            }
+        }
+    }
+
+    private fun updateMessageState(messageId: Long, newState: MessageState) {
+        messageDao.updateMessageState(messageId, newState)
     }
 }
