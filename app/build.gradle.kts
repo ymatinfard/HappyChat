@@ -105,6 +105,8 @@ dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.retrofit)
+    implementation(libs.gson)
     ksp(libs.androidx.room.compiler)
     ksp(libs.android.hilt.compiler)
 
