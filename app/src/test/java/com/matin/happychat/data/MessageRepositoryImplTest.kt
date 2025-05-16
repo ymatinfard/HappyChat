@@ -14,7 +14,6 @@ import io.mockk.mockk
 import io.mockk.slot
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -24,7 +23,6 @@ class MessageRepositoryImplTest {
     private val messageDao: MessageDao = mockk(relaxed = true)
     private val chatApi: ChatApi = mockk()
     private val testDispatcher = StandardTestDispatcher()
-    private val testScope = TestScope(testDispatcher)
 
     private lateinit var repository: MessageRepositoryImpl
 
@@ -42,9 +40,6 @@ class MessageRepositoryImplTest {
         val text = "Hello world"
         val messageSlot = slot<MessageEntity>()
 
-        coEvery { chatApi.sendMessage(any()) } returns mockk {
-            every { toEntity() } returns mockk()
-        }
         every { messageDao.insertMessageToDb(capture(messageSlot)) } just Runs
 
         repository.insertToDb(text)

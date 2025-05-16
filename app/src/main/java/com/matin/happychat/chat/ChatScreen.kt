@@ -30,7 +30,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.matin.happychat.designsystem.component.ChatTopBar
 import com.matin.happychat.designsystem.component.MessageInputBar
 import com.matin.happychat.designsystem.component.MessageList
-import com.matin.happychat.designsystem.component.PermissionRequestHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -58,8 +57,8 @@ fun ChatScreen(
             ChatTopBar(
                 scrollBehavior = scrollBehavior,
                 onBackClick = onNavigateBack,
-                onInfoClick = viewModel::onInfoClick,
-                onSearchClick = viewModel::onSearchClick
+                onInfoMenuOption = { viewModel.onEvent(ChatEvent.InfoMenuClick(it)) },
+                onSearchClick = { viewModel.onEvent(ChatEvent.SearchClick) }
             )
         },
         contentWindowInsets = ScaffoldDefaults
@@ -83,17 +82,12 @@ fun ChatScreen(
             MessageInputBar(
                 message = uiState.currentMessage,
                 isSendButtonEnabled = shouldShowSendButton && !uiState.isMsgPending,
-                onMessageChange = viewModel::onUpdateMessage,
+                onMessageChange = { viewModel.onEvent(ChatEvent.UpdateMessage(it)) },
                 onSendClick = { sendTextMessage(viewModel, coroutineScope, listState) },
                 modifier = Modifier.navigationBarsPadding()
             )
         }
     }
-
-    PermissionRequestHandler(
-        permissionsToRequest = uiState.pendingPermissions,
-        onPermissionResult = viewModel::onPermissionResult,
-    )
 }
 
 private fun sendTextMessage(

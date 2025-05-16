@@ -3,6 +3,7 @@ package com.matin.happychat.chat
 import android.Manifest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.matin.happychat.designsystem.component.InfoMenuOption
 import com.matin.happychat.domain.Message
 import com.matin.happychat.domain.MessageRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,7 +52,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onUpdateMessage(text: String) {
+    private fun onUpdateMessage(text: String) {
         _uiState.update { it.copy(currentMessage = text) }
     }
 
@@ -70,7 +71,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onPermissionResult(permissions: Map<String, Boolean>) {
+    private fun onPermissionResult(permissions: Map<String, Boolean>) {
         val newPermissions = _uiState.value.pendingPermissions - permissions.keys
 
         _uiState.update {
@@ -92,13 +93,20 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onSearchClick() {
+    private fun onSearchClick() {
     }
 
-    fun onInfoClick() {
+    private fun onInfoMenuClick(onInfoMenuOption: InfoMenuOption) {
+        when (onInfoMenuOption) {
+            InfoMenuOption.END_SESSION -> {
+                viewModelScope.launch {
+                    messageRepository.deleteAllMessages()
+                }
+            }
+        }
     }
 
-    fun onMessageClick(messageId: String) {
+    private fun onMessageClick(messageId: String) {
     }
 
     fun onEvent(event: ChatEvent) {
@@ -106,7 +114,7 @@ class ChatViewModel @Inject constructor(
             is ChatEvent.UpdateMessage -> onUpdateMessage(event.text)
             is ChatEvent.SendMessage -> onSendMessage()
             is ChatEvent.SearchClick -> onSearchClick()
-            is ChatEvent.InfoClick -> onInfoClick()
+            is ChatEvent.InfoMenuClick -> onInfoMenuClick(event.infoMenuOption)
             is ChatEvent.MessageClick -> onMessageClick(event.messageId)
         }
     }
@@ -125,6 +133,6 @@ sealed class ChatEvent {
     data class UpdateMessage(val text: String) : ChatEvent()
     object SendMessage : ChatEvent()
     object SearchClick : ChatEvent()
-    object InfoClick : ChatEvent()
     data class MessageClick(val messageId: String) : ChatEvent()
+    data class InfoMenuClick(val infoMenuOption: InfoMenuOption) : ChatEvent()
 }

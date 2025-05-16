@@ -2,12 +2,15 @@ package com.matin.happychat.designsystem.component
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -16,6 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,7 +44,7 @@ fun ChatTopBar(
     subtitle: String = "online",
     onBackClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
-    onInfoClick: () -> Unit = {},
+    onInfoMenuOption: (onInfoMenuOption: InfoMenuOption) -> Unit = {},
     profileImageRes: Int = R.drawable.profile_img,
     scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
@@ -55,7 +62,7 @@ fun ChatTopBar(
         actions = {
             ChatActions(
                 onSearchClick = onSearchClick,
-                onInfoClick = onInfoClick
+                onInfoMenuOption = onInfoMenuOption
             )
         },
         navigationIcon = {
@@ -100,7 +107,7 @@ private fun ChatTitle(title: String, subtitle: String) {
 @Composable
 private fun ChatActions(
     onSearchClick: () -> Unit,
-    onInfoClick: () -> Unit
+    onInfoMenuOption: (InfoMenuOption) -> Unit
 ) {
     Row(
         modifier = Modifier.padding(end = 16.dp),
@@ -112,10 +119,33 @@ private fun ChatActions(
                 contentDescription = "search"
             )
         }
-        IconButton(onClick = onInfoClick) {
+        InfoMenu(onInfoMenuOption)
+    }
+}
+
+@Composable
+private fun InfoMenu(onInfoMenuOption: (InfoMenuOption) -> Unit) {
+    var showMenu by remember { mutableStateOf(false)}
+    Box {
+        IconButton(onClick = {
+            showMenu = true
+        }) {
             Icon(
                 imageVector = HappyChatIcons.INFO,
                 contentDescription = "info"
+            )
+        }
+
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("End session") },
+                onClick = {
+                    onInfoMenuOption(InfoMenuOption.END_SESSION)
+                    showMenu = false
+                }
             )
         }
     }
@@ -146,4 +176,8 @@ private fun ChatNavigationIcon(
             contentDescription = "profile image"
         )
     }
+}
+
+enum class InfoMenuOption {
+    END_SESSION,
 }

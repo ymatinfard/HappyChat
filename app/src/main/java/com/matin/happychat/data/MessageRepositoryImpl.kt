@@ -30,7 +30,8 @@ class MessageRepositoryImpl @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : MessageRepository {
 
-    private val externalSupervisorScope: CoroutineScope = CoroutineScope(ioDispatcher + SupervisorJob())
+    private val externalSupervisorScope: CoroutineScope =
+        CoroutineScope(ioDispatcher + SupervisorJob())
     private val pendingMessages = Channel<Message>(Channel.BUFFERED)
     private val semaphore = Semaphore(5)
 
@@ -99,6 +100,14 @@ class MessageRepositoryImpl @Inject constructor(
     }
 
     override fun hasPendingMessage(): Flow<Boolean> = messageDao.hasPendingMessages()
+
+    override suspend fun deleteAllMessages() = withContext(ioDispatcher) {
+        try {
+            messageDao.deleteAllMessages()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     private fun updateMessageState(messageId: String, newState: MessageState) {
         messageDao.updateMessageState(messageId, newState)
