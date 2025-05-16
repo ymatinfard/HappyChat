@@ -81,8 +81,7 @@ fun ChatScreen(
                 modifier = Modifier.weight(1f),
                 messages = uiState.messages,
                 listState = listState,
-                playerController = voiceMessagePlayer,
-                onMessageClick = viewModel::onMessageClick
+                isMsgPending = uiState.isMsgPending,
             )
 
             MessageInputBar(

@@ -3,7 +3,6 @@ package com.matin.happychat.data
 import android.util.Log
 import com.matin.happychat.common.model.MessageState
 import com.matin.happychat.data.local.MessageDao
-import com.matin.happychat.data.model.MessageRequest
 import com.matin.happychat.data.rest.ChatApi
 import com.matin.happychat.di.IoDispatcher
 import com.matin.happychat.domain.Message
@@ -11,6 +10,7 @@ import com.matin.happychat.domain.MessageFactory.createMessage
 import com.matin.happychat.domain.MessageRepository
 import com.matin.happychat.domain.toDomain
 import com.matin.happychat.domain.toEntity
+import com.matin.happychat.domain.toNetwork
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -85,11 +85,7 @@ class MessageRepositoryImpl @Inject constructor(
 
     private suspend fun sendToServer(message: Message) = withContext(ioDispatcher) {
         try {
-            val messageRequest = MessageRequest(
-                sender = message.author,
-                message = message.content
-            )
-            val responseMessage = chatApi.sendMessage(messageRequest)
+            val responseMessage = chatApi.sendMessage(message.toNetwork())
 
             updateMessageState(message.id, MessageState.SENT)
             messageDao.insertMessageToDb(responseMessage.first().toEntity())
@@ -101,6 +97,8 @@ class MessageRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override fun hasPendingMessage(): Flow<Boolean> = messageDao.hasPendingMessages()
 
     private fun updateMessageState(messageId: String, newState: MessageState) {
         messageDao.updateMessageState(messageId, newState)

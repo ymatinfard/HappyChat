@@ -24,6 +24,15 @@ class ChatViewModel @Inject constructor(
 
     init {
         loadMessages()
+        checkPendingMessage()
+    }
+
+    private fun checkPendingMessage() {
+        viewModelScope.launch {
+            messageRepository.hasPendingMessage().collect { hasPendingMessages ->
+                _uiState.update { it.copy(isMsgPending = true) }
+            }
+        }
     }
 
     private fun loadMessages() {
@@ -134,6 +143,7 @@ class ChatViewModel @Inject constructor(
 
 data class ChatUiState(
     val messages: List<Message> = emptyList(),
+    val isMsgPending: Boolean = false,
     val currentMessage: String = "",
     val isRecording: Boolean = false,
     val isShowingPhotoPicker: Boolean = false,

@@ -3,6 +3,7 @@ package com.matin.happychat.designsystem.component
 import MediaUtils
 import MessageTimeStamp
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,12 +38,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.matin.happychat.R
+import com.matin.happychat.designsystem.theme.HappyChatTheme
 import com.matin.happychat.domain.Message
 import com.matin.happychat.domain.VoiceMessage
 import com.matin.happychat.mediaplayer.VoiceMessagePlayer
@@ -48,8 +54,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-// Constants for UI dimensions and animations
-private const val MESSAGE_BUBBLE_CORNER_RADIUS = 8
+private const val MESSAGE_BUBBLE_CORNER_RADIUS = 16
 private const val IMAGE_MESSAGE_WIDTH = 200
 private const val IMAGE_MESSAGE_HEIGHT = 300
 private const val VOICE_MESSAGE_WIDTH = 300
@@ -62,24 +67,36 @@ internal const val TIMESTAMP_TEXT_SIZE = 14
 fun MessageList(
     modifier: Modifier,
     messages: List<Message>,
+    isMsgPending: Boolean,
     listState: LazyListState,
-    playerController: VoiceMessagePlayer,
-    onMessageClick: (String) -> Unit
 ) {
+    LaunchedEffect(messages.size) {
+        listState.animateScrollToItem(0)
+    }
+
     Box(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             reverseLayout = true,
             state = listState
         ) {
+            item {
+                AnimatedVisibility(visible = isMsgPending) {
+                    LoadingPulse(
+                        modifier = Modifier.padding(6.dp),
+                        color = MaterialTheme.colorScheme.secondary,
+                        size = 14.dp,
+                        spaceBetween = 3.dp,
+                        travelDistance = 10.dp
+                    )
+                }
+            }
             items(
                 items = messages,
                 key = { it.id }
             ) { message ->
                 MessageItem(
-                    message = message,
-                    playerController = playerController,
-                    onMessageClick = { onMessageClick(message.id) }
+                    message = message
                 )
             }
         }
@@ -89,31 +106,41 @@ fun MessageList(
 @Composable
 private fun MessageItem(
     message: Message,
-    playerController: VoiceMessagePlayer,
-    onMessageClick: () -> Unit
 ) {
     val alignment = if (message.isFromCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
+    val shape = chooseMessageBoxShape(message.isFromCurrentUser, MESSAGE_BUBBLE_CORNER_RADIUS.dp)
     val backgroundColor = if (message.isFromCurrentUser)
         MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
 
     Box(
         modifier = Modifier
-            .padding(4.dp)
+            .padding(horizontal = 8.dp, vertical = 10.dp)
             .fillMaxWidth(),
         contentAlignment = alignment
     ) {
         Box(
             modifier = Modifier
-                .clip(shape = RoundedCornerShape(MESSAGE_BUBBLE_CORNER_RADIUS.dp))
+                .clip(shape = shape)
                 .background(color = backgroundColor)
-                .padding(horizontal = 6.dp, vertical = 4.dp)
+                .padding(horizontal = 8.dp, vertical = 6.dp)
         ) {
             MessageContent(
                 message = message,
-                playerController = playerController,
-                onMessageClick = onMessageClick
             )
         }
+    }
+}
+
+@Composable
+private fun chooseMessageBoxShape(
+    isFromCurrentUser: Boolean,
+    cornerRadius: Dp,
+): RoundedCornerShape {
+    val baseShape = RoundedCornerShape(cornerRadius)
+    return if (isFromCurrentUser) {
+        baseShape.copy(topEnd = CornerSize(0))
+    } else {
+        baseShape.copy(topStart = CornerSize(0))
     }
 }
 
@@ -123,8 +150,6 @@ private fun MessageItem(
 @Composable
 private fun MessageContent(
     message: Message,
-    playerController: VoiceMessagePlayer,
-    onMessageClick: () -> Unit
 ) {
     when (message) {
         is Message -> TextMessageContent(message)
@@ -138,7 +163,6 @@ private fun TextMessageContent(message: Message) {
     Column(verticalArrangement = Arrangement.Bottom) {
         Text(
             text = message.content,
-            color = chooseOnSurfaceColorFor(message.isFromCurrentUser),
             fontSize = MESSAGE_TEXT_SIZE.sp,
         )
         MessageTimeStamp(
@@ -273,4 +297,17 @@ private fun formatDuration(durationMs: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return String.format("%02d:%02d", minutes, seconds)
+}
+
+@Preview
+@Composable
+fun MessageListPreview() {
+    HappyChatTheme {
+        MessageList(
+            modifier = Modifier,
+            messages = emptyList(),
+            isMsgPending = true,
+            listState = rememberLazyListState(),
+        )
+    }
 }
