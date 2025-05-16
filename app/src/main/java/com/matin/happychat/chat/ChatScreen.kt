@@ -1,6 +1,5 @@
 package com.matin.happychat.chat
 
-import android.Manifest
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
@@ -8,6 +7,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -28,12 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.matin.happychat.designsystem.component.ChatTopBar
-import com.matin.happychat.designsystem.component.MediaPickerLauncher
 import com.matin.happychat.designsystem.component.MessageInputBar
 import com.matin.happychat.designsystem.component.MessageList
 import com.matin.happychat.designsystem.component.PermissionRequestHandler
-import com.matin.happychat.mediaplayer.VoiceMessagePlayer
-import com.matin.happychat.mediaplayer.VoiceMessageRecorder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -42,8 +39,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChatScreen(
     viewModel: ChatViewModel = hiltViewModel(),
-    voiceMessagePlayer: VoiceMessagePlayer,
-    voiceMessageRecorder: VoiceMessageRecorder,
     onNavigateBack: () -> Unit
 ) {
     val topBarState = rememberTopAppBarState()
@@ -76,6 +71,7 @@ fun ChatScreen(
             Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
+                .imePadding()
         ) {
             MessageList(
                 modifier = Modifier.weight(1f),
@@ -86,30 +82,13 @@ fun ChatScreen(
 
             MessageInputBar(
                 message = uiState.currentMessage,
-                isRecording = uiState.isRecording,
                 isSendButtonEnabled = shouldShowSendButton && !uiState.isMsgPending,
                 onMessageChange = viewModel::onUpdateMessage,
                 onSendClick = { sendTextMessage(viewModel, coroutineScope, listState) },
-                onAttachClick = {
-                    requestMediaPermission(
-                        viewModel,
-                        Manifest.permission.READ_MEDIA_IMAGES
-                    )
-                },
-                onVoiceClick = { handleVoiceRecordingAction(viewModel, voiceMessageRecorder) },
                 modifier = Modifier.navigationBarsPadding()
             )
         }
     }
-
-    MediaPickerLauncher(
-        showPicker = uiState.isShowingPhotoPicker,
-        onMediaSelected = { uri ->
-            viewModel.onSendImageMessage(uri.toString())
-            scrollToBottom(coroutineScope, listState)
-        },
-        onDismiss = viewModel::dismissPhotoPicker
-    )
 
     PermissionRequestHandler(
         permissionsToRequest = uiState.pendingPermissions,
@@ -130,22 +109,4 @@ private fun scrollToBottom(coroutineScope: CoroutineScope, listState: LazyListSt
     coroutineScope.launch {
         listState.animateScrollToItem(0)
     }
-}
-
-private fun handleVoiceRecordingAction(
-    viewModel: ChatViewModel,
-    voiceMessageRecorder: VoiceMessageRecorder
-) {
-    if (viewModel.uiState.value.isRecording) {
-        val filePath = voiceMessageRecorder.stopRecording()
-        //  viewModel.onSendVoiceMessage(filePath)
-        viewModel.setRecordingState(false)
-    } else {
-        // Check permission if granted then start recording
-        viewModel.requestPermission(Manifest.permission.RECORD_AUDIO)
-    }
-}
-
-private fun requestMediaPermission(viewModel: ChatViewModel, permission: String) {
-    viewModel.requestPermission(permission)
 }

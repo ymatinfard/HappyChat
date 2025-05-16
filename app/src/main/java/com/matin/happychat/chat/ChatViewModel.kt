@@ -51,21 +51,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onEvent(event: ChatEvent) {
-        when (event) {
-            is ChatEvent.UpdateMessage -> onUpdateMessage(event.text)
-            is ChatEvent.SendMessage -> onSendMessage()
-            is ChatEvent.SendImageMessage -> onSendImageMessage(event.uri)
-            is ChatEvent.SendVoiceMessage -> onSendVoiceMessage(event.path)
-            is ChatEvent.RequestPermission -> requestPermission(event.permission)
-            is ChatEvent.PermissionResult -> onPermissionResult(event.permissions)
-            is ChatEvent.DismissPhotoPicker -> dismissPhotoPicker()
-            is ChatEvent.SearchClick -> onSearchClick()
-            is ChatEvent.InfoClick -> onInfoClick()
-            is ChatEvent.MessageClick -> onMessageClick(event.messageId)
-        }
-    }
-
     fun onUpdateMessage(text: String) {
         _uiState.update { it.copy(currentMessage = text) }
     }
@@ -82,22 +67,6 @@ class ChatViewModel @Inject constructor(
                     )
                 }
             }
-        }
-    }
-
-    fun onSendImageMessage(uri: String) {
-
-    }
-
-    fun onSendVoiceMessage(path: String) {
-
-    }
-
-    fun requestPermission(permission: String) {
-        _uiState.update {
-            it.copy(
-                pendingPermissions = it.pendingPermissions + permission
-            )
         }
     }
 
@@ -123,14 +92,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun dismissPhotoPicker() {
-        _uiState.update { it.copy(isShowingPhotoPicker = false) }
-    }
-
-    fun setRecordingState(isRecording: Boolean) {
-        _uiState.update { it.copy(isRecording = isRecording) }
-    }
-
     fun onSearchClick() {
     }
 
@@ -138,6 +99,16 @@ class ChatViewModel @Inject constructor(
     }
 
     fun onMessageClick(messageId: String) {
+    }
+
+    fun onEvent(event: ChatEvent) {
+        when (event) {
+            is ChatEvent.UpdateMessage -> onUpdateMessage(event.text)
+            is ChatEvent.SendMessage -> onSendMessage()
+            is ChatEvent.SearchClick -> onSearchClick()
+            is ChatEvent.InfoClick -> onInfoClick()
+            is ChatEvent.MessageClick -> onMessageClick(event.messageId)
+        }
     }
 }
 
@@ -153,11 +124,6 @@ data class ChatUiState(
 sealed class ChatEvent {
     data class UpdateMessage(val text: String) : ChatEvent()
     object SendMessage : ChatEvent()
-    data class SendImageMessage(val uri: String) : ChatEvent()
-    data class SendVoiceMessage(val path: String) : ChatEvent()
-    data class RequestPermission(val permission: String) : ChatEvent()
-    data class PermissionResult(val permissions: Map<String, Boolean>) : ChatEvent()
-    object DismissPhotoPicker : ChatEvent()
     object SearchClick : ChatEvent()
     object InfoClick : ChatEvent()
     data class MessageClick(val messageId: String) : ChatEvent()
