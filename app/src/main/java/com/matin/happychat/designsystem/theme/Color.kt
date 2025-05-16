@@ -1,7 +1,7 @@
 package com.matin.happychat.designsystem.theme
 import androidx.compose.ui.graphics.Color
 
-val primaryLight = Color(0xFF28638A)
+val primaryLight = Color(0xFF26485D)
 val onPrimaryLight = Color(0xFFFFFFFF)
 val primaryContainerLight = Color(0xFFCAE6FF)
 val onPrimaryContainerLight = Color(0xFF001E30)
@@ -9,7 +9,7 @@ val secondaryLight = Color(0xFF50606E)
 val onSecondaryLight = Color(0xFFFFFFFF)
 val secondaryContainerLight = Color(0xFFD3E5F6)
 val onSecondaryContainerLight = Color(0xFF0C1D29)
-val tertiaryLight = Color(0xFF5B0369)
+val tertiaryLight = Color(0xFF6C0A7C)
 val onTertiaryLight = Color(0xFFFFFFFF)
 val tertiaryContainerLight = Color(0xFFEBDDFF)
 val onTertiaryContainerLight = Color(0xFF201634)
