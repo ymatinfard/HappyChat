@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.TopAppBarDefaults
@@ -28,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.matin.happychat.designsystem.component.ChatTopBar
+import com.matin.happychat.designsystem.component.EmptyState
 import com.matin.happychat.designsystem.component.MessageInputBar
 import com.matin.happychat.designsystem.component.MessageList
 import kotlinx.coroutines.CoroutineScope
@@ -72,12 +74,16 @@ fun ChatScreen(
                 .fillMaxSize()
                 .imePadding()
         ) {
-            MessageList(
-                modifier = Modifier.weight(1f),
-                messages = uiState.messages,
-                listState = listState,
-                isMsgPending = uiState.isMsgPending,
-            )
+            if (uiState.messages.isEmpty()) {
+                EmptyState(modifier = Modifier.weight(1f))
+            } else {
+                MessageList(
+                    modifier = Modifier.weight(1f),
+                    messages = uiState.messages,
+                    listState = listState,
+                    isMsgPending = uiState.isMsgPending,
+                )
+            }
 
             MessageInputBar(
                 message = uiState.currentMessage,

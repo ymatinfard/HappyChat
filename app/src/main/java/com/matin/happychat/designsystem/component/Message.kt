@@ -41,7 +41,9 @@ fun MessageList(
     listState: LazyListState,
 ) {
     LaunchedEffect(messages.size) {
-        listState.animateScrollToItem(0)
+        if (listState.firstVisibleItemIndex < 3) {
+            listState.animateScrollToItem(0)
+        }
     }
 
     Box(modifier = modifier.background(MaterialTheme.colorScheme.background)) {
@@ -84,7 +86,7 @@ private fun MessageItem(
 
     Box(
         modifier = Modifier
-            .padding(horizontal = 8.dp, vertical = 10.dp)
+            .padding(8.dp)
             .fillMaxWidth(),
         contentAlignment = alignment
     ) {
