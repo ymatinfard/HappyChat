@@ -5,7 +5,8 @@ import com.matin.happychat.common.model.ChatIdGenerator
 import com.matin.happychat.common.model.MessageState
 import com.matin.happychat.common.model.MessageType
 import com.matin.happychat.data.model.MessageEntity
-import com.matin.happychat.data.model.MessageNetworkResponse
+import com.matin.happychat.data.model.MessageRequestNetwork
+import com.matin.happychat.data.model.MessageResponseNetwork
 import java.time.Instant
 
 const val CURRENT_USER_ID = "me"
@@ -112,7 +113,7 @@ fun Message.toEntity(): MessageEntity {
     )
 }
 
-fun MessageNetworkResponse.toEntity(): MessageEntity {
+fun MessageResponseNetwork.toEntity(): MessageEntity {
     return MessageEntity(
         id = ChatIdGenerator.nextId(),
         content = text,
@@ -129,5 +130,12 @@ fun MessageEntity.toDomain(): Message {
         content = content,
         author = author,
         createdAt = timestamp,
+    )
+}
+
+fun Message.toNetwork(): MessageRequestNetwork {
+    return MessageRequestNetwork(
+        sender = author,
+        message = content
     )
 }
