@@ -1,4 +1,4 @@
-package com.matin.happychat.data.grpc
+package com.matin.happychat.data.remote.rest.grpc
 
 import com.matin.happychat.ChatMessage
 import com.matin.happychat.domain.Message

@@ -24,4 +24,7 @@ interface MessageDao {
 
     @Query("SELECT * FROM messages WHERE state = 'FAILED'")
     fun getFailedMessages(): List<MessageEntity>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM messages WHERE state = 'PENDING')")
+    fun hasPendingMessages(): Flow<Boolean>
 }

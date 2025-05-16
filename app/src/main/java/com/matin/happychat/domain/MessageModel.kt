@@ -5,7 +5,8 @@ import com.matin.happychat.common.model.ChatIdGenerator
 import com.matin.happychat.common.model.MessageState
 import com.matin.happychat.common.model.MessageType
 import com.matin.happychat.data.model.MessageEntity
-import com.matin.happychat.data.model.MessageNetworkResponse
+import com.matin.happychat.data.model.MessageRequestNetwork
+import com.matin.happychat.data.model.MessageResponseNetwork
 import java.time.Instant
 
 const val CURRENT_USER_ID = "me"
@@ -33,32 +34,6 @@ data class Message(
     override val type: MessageType = MessageType.TEXT
 }
 
-data class ImageMessage(
-    override val id: String = ChatIdGenerator.nextId(),
-    override val content: String = "", // Optional caption
-    override val author: String = CURRENT_USER_ID,
-    override val createdAt: Long = Instant.now().toEpochMilli(),
-    override val state: MessageState = MessageState.PENDING,
-    val imageUri: String,
-    val width: Int? = null,
-    val height: Int? = null,
-) : BaseMessage(id, content, author, createdAt, state) {
-    override val type: MessageType = MessageType.IMAGE
-}
-
-data class VoiceMessage(
-    override val id: String = ChatIdGenerator.nextId(),
-    override val content: String = "", // Optional transcription
-    override val author: String = CURRENT_USER_ID,
-    override val createdAt: Long = Instant.now().toEpochMilli(),
-    override val state: MessageState = MessageState.PENDING,
-    val voicePath: Uri,
-    val durationMs: Long,
-) : BaseMessage(id, content, author, createdAt, state) {
-    override val type: MessageType = MessageType.VOICE
-}
-
-
 /**
  * Factory methods to create messages
  */
@@ -74,33 +49,6 @@ object MessageFactory {
     }
 }
 
-//    fun createImageMessage(
-//        imageUri: String,
-//        caption: String = "",
-//        author: String = CURRENT_USER_ID
-//    ): ImageMessage {
-//        return ImageMessage(
-//            content = caption,
-//            imageUri = imageUri,
-//            author = author
-//        )
-//    }
-//
-//    fun createVoiceMessage(
-//        voicePath: Uri,
-//        durationMs: Long,
-//        transcription: String = "",
-//        author: String = CURRENT_USER_ID
-//    ): VoiceMessage {
-//        return VoiceMessage(
-//            content = transcription,
-//            voicePath = voicePath,
-//            durationMs = durationMs,
-//            author = author
-//        )
-//    }
-
-
 fun Message.toEntity(): MessageEntity {
     return MessageEntity(
         id = id,
@@ -112,7 +60,7 @@ fun Message.toEntity(): MessageEntity {
     )
 }
 
-fun MessageNetworkResponse.toEntity(): MessageEntity {
+fun MessageResponseNetwork.toEntity(): MessageEntity {
     return MessageEntity(
         id = ChatIdGenerator.nextId(),
         content = text,
@@ -129,5 +77,12 @@ fun MessageEntity.toDomain(): Message {
         content = content,
         author = author,
         createdAt = timestamp,
+    )
+}
+
+fun Message.toNetwork(): MessageRequestNetwork {
+    return MessageRequestNetwork(
+        sender = author,
+        message = content
     )
 }

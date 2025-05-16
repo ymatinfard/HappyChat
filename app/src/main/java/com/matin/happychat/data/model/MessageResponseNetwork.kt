@@ -9,13 +9,13 @@ import com.google.gson.annotations.SerializedName
 //    val createdAt: Long = Instant.now().toEpochMilli(),
 //)
 
-data class MessageNetworkResponse(
+data class MessageResponseNetwork(
     @SerializedName("recipient_id")
     val id: String,
     val text: String
 )
 
-data class MessageRequest(
+data class MessageRequestNetwork(
     val sender: String,
     val message: String
 )
