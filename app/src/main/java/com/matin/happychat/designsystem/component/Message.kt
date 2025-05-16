@@ -82,22 +82,24 @@ fun MessageList(
         ) {
             item {
                 AnimatedVisibility(visible = isMsgPending) {
-                    LoadingPulse(
-                        modifier = Modifier.padding(6.dp),
-                        color = MaterialTheme.colorScheme.secondary,
-                        size = 14.dp,
-                        spaceBetween = 3.dp,
-                        travelDistance = 10.dp
-                    )
+                    MessageItem(isFromCurrentUser = false) {
+                        LoadingPulse(
+                            modifier = Modifier.padding(10.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            size = 14.dp,
+                            spaceBetween = 3.dp,
+                            travelDistance = 10.dp
+                        )
+                    }
                 }
             }
             items(
                 items = messages,
                 key = { it.id }
             ) { message ->
-                MessageItem(
-                    message = message
-                )
+                MessageItem(message.isFromCurrentUser) {
+                    MessageContent(message)
+                }
             }
         }
     }
@@ -105,12 +107,10 @@ fun MessageList(
 
 @Composable
 private fun MessageItem(
-    message: Message,
+    isFromCurrentUser: Boolean,
+    content: @Composable () -> Unit,
 ) {
-    val alignment = if (message.isFromCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
-    val shape = chooseMessageBoxShape(message.isFromCurrentUser, MESSAGE_BUBBLE_CORNER_RADIUS.dp)
-    val backgroundColor = if (message.isFromCurrentUser)
-        MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+    val alignment = if (isFromCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
 
     Box(
         modifier = Modifier
@@ -118,16 +118,27 @@ private fun MessageItem(
             .fillMaxWidth(),
         contentAlignment = alignment
     ) {
-        Box(
-            modifier = Modifier
-                .clip(shape = shape)
-                .background(color = backgroundColor)
-                .padding(horizontal = 8.dp, vertical = 6.dp)
-        ) {
-            MessageContent(
-                message = message,
-            )
+        MessageBubble(isFromCurrentUser) {
+            content()
         }
+    }
+}
+
+@Composable
+private fun MessageBubble(
+    isFromCurrentUser: Boolean,
+    content: @Composable () -> Unit
+) {
+    val shape = chooseMessageBoxShape(isFromCurrentUser, MESSAGE_BUBBLE_CORNER_RADIUS.dp)
+    val backgroundColor = if (isFromCurrentUser)
+        MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
+    Box(
+        modifier = Modifier
+            .clip(shape = shape)
+            .background(color = backgroundColor)
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+    ) {
+        content()
     }
 }
 
@@ -164,6 +175,7 @@ private fun TextMessageContent(message: Message) {
         Text(
             text = message.content,
             fontSize = MESSAGE_TEXT_SIZE.sp,
+            color = chooseOnSurfaceColorFor(message.isFromCurrentUser)
         )
         MessageTimeStamp(
             timeStamp = message.createdAt,

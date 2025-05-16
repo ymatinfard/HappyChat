@@ -30,7 +30,7 @@ class ChatViewModel @Inject constructor(
     private fun checkPendingMessage() {
         viewModelScope.launch {
             messageRepository.hasPendingMessage().collect { hasPendingMessages ->
-                _uiState.update { it.copy(isMsgPending = true) }
+                _uiState.update { it.copy(isMsgPending = hasPendingMessages) }
             }
         }
     }

@@ -87,7 +87,7 @@ fun ChatScreen(
             MessageInputBar(
                 message = uiState.currentMessage,
                 isRecording = uiState.isRecording,
-                showSendButton = shouldShowSendButton,
+                isSendButtonEnabled = shouldShowSendButton && !uiState.isMsgPending,
                 onMessageChange = viewModel::onUpdateMessage,
                 onSendClick = { sendTextMessage(viewModel, coroutineScope, listState) },
                 onAttachClick = {

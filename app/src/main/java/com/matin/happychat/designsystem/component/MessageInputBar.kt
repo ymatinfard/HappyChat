@@ -1,6 +1,5 @@
 package com.matin.happychat.designsystem.component
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -45,7 +44,7 @@ private const val MESSAGE_INPUT_TEXT_SIZE = 22
 fun MessageInputBar(
     message: String,
     isRecording: Boolean,
-    showSendButton: Boolean,
+    isSendButtonEnabled: Boolean,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
     onAttachClick: () -> Unit,
@@ -73,22 +72,8 @@ fun MessageInputBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                AttachmentButton(onClick = onAttachClick)
-
-                Crossfade(
-                    targetState = showSendButton,
-                    animationSpec = tween(durationMillis = 300),
-                    modifier = Modifier.size(INPUT_ICON_SIZE.dp)
-                ) { isSendButtonVisible ->
-                    if (isSendButtonVisible) {
-                        SendButton(onClick = onSendClick)
-                    } else {
-                        VoiceRecordButton(
-                            isRecording = isRecording,
-                            onClick = onVoiceClick
-                        )
-                    }
-                }
+//                AttachmentButton(onClick = onAttachClick)
+                SendButton(onClick = onSendClick, isEnabled = isSendButtonEnabled)
             }
         }
     }
@@ -122,8 +107,7 @@ private fun MessageTextField(
         ),
         keyboardActions = KeyboardActions(
             onDone = { onSendClick() }
-        )
-        ,
+        ),
         placeholder = {
             Text(
                 text = "Type a message...",
@@ -147,16 +131,17 @@ private fun AttachmentButton(onClick: () -> Unit) {
 }
 
 @Composable
-private fun SendButton(onClick: () -> Unit) {
+private fun SendButton(onClick: () -> Unit, isEnabled: Boolean) {
     IconButton(
         onClick = onClick,
         modifier = Modifier
-            .clip(CircleShape)
+            .clip(CircleShape),
+        enabled = isEnabled
     ) {
         Icon(
             modifier = Modifier.size(INPUT_ICON_SIZE.dp),
             painter = painterResource(id = R.drawable.ic_send),
-            tint = MaterialTheme.colorScheme.onPrimary,
+            tint = if (isEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outline,
             contentDescription = "Send message"
         )
     }
