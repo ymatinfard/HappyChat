@@ -1,7 +1,8 @@
 import com.matin.happychat.data.MessageRepositoryImpl
 import com.matin.happychat.data.local.MessageDao
 import com.matin.happychat.data.model.MessageEntity
-import com.matin.happychat.data.rest.MessageApi
+import com.matin.happychat.data.model.MessageResponseNetwork
+import com.matin.happychat.data.remote.rest.ChatApi
 import com.matin.happychat.domain.MessageFactory.createMessage
 import com.matin.happychat.domain.toEntity
 import io.mockk.Runs
@@ -21,7 +22,7 @@ import org.junit.Test
 class MessageRepositoryImplTest {
 
     private val messageDao: MessageDao = mockk(relaxed = true)
-    private val messageApi: MessageApi = mockk()
+    private val chatApi: ChatApi = mockk()
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
 
@@ -31,9 +32,8 @@ class MessageRepositoryImplTest {
     fun setup() {
         repository = MessageRepositoryImpl(
             messageDao = messageDao,
-            messageApi = messageApi,
+            chatApi = chatApi,
             ioDispatcher = testDispatcher,
-            externalSupervisorScope = testScope
         )
     }
 
@@ -42,7 +42,7 @@ class MessageRepositoryImplTest {
         val text = "Hello world"
         val messageSlot = slot<MessageEntity>()
 
-        coEvery { messageApi.sendMessage(any()) } returns mockk {
+        coEvery { chatApi.sendMessage(any()) } returns mockk {
             every { toEntity() } returns mockk()
         }
         every { messageDao.insertMessageToDb(capture(messageSlot)) } just Runs
@@ -51,19 +51,20 @@ class MessageRepositoryImplTest {
 
         assertEquals(text, messageSlot.captured.content)
         coVerify(exactly = 1) { messageDao.insertMessageToDb(any()) }
-        coVerify(exactly = 1) { messageApi.sendMessage(any()) }
+        coVerify(exactly = 1) { chatApi.sendMessage(any()) }
     }
 
     @Test
     fun `retryFailedMessages retries messages from DB`() = runTest(testDispatcher) {
         val failedMessage = createMessage("Retry me")
+        val response = mockk<MessageResponseNetwork>()
         coEvery { messageDao.getFailedMessages() } returns listOf(failedMessage.toEntity())
-        coEvery { messageApi.sendMessage(any()) } returns mockk {
-            every { toEntity() } returns mockk()
+        coEvery { chatApi.sendMessage(any()) } returns mockk {
+            every { response } returns mockk()
         }
 
         repository.retryFailedMessages()
 
-        coVerify { messageApi.sendMessage(match { it.id == failedMessage.id }) }
+        coVerify { chatApi.sendMessage(match { it.message == failedMessage.content }) }
     }
 }

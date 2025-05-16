@@ -1,4 +1,4 @@
-package com.matin.happychat.data.rest
+package com.matin.happychat.data.remote.rest
 
 import com.matin.happychat.data.model.MessageResponseNetwork
 import com.matin.happychat.data.model.MessageRequestNetwork

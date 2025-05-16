@@ -1,4 +1,4 @@
-package com.matin.happychat.data.grpc
+package com.matin.happychat.data.remote.rest.grpc
 
 import android.util.Log
 import com.matin.happychat.ChatMessage

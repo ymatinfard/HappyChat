@@ -1,7 +1,7 @@
 package com.matin.happychat.data
 
 import com.matin.happychat.ChatMessage
-import com.matin.happychat.data.grpc.ChatSession
+import com.matin.happychat.data.remote.rest.grpc.ChatSession
 import io.grpc.stub.StreamObserver
 import io.mockk.mockk
 import io.mockk.unmockkAll

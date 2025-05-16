@@ -3,7 +3,7 @@ package com.matin.happychat.data
 import android.util.Log
 import com.matin.happychat.common.model.MessageState
 import com.matin.happychat.data.local.MessageDao
-import com.matin.happychat.data.rest.ChatApi
+import com.matin.happychat.data.remote.rest.ChatApi
 import com.matin.happychat.di.IoDispatcher
 import com.matin.happychat.domain.Message
 import com.matin.happychat.domain.MessageFactory.createMessage
