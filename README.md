@@ -1,4 +1,4 @@
-# 🍔 Conversational AI Chat – Android MVP
+# 🍔 Conversational AI Chat – Android
 
 This project is an Android-based MVP (Minimum Viable Product) of a **Conversational AI Chat feature** built for the **Support section of a food delivery application**. Users can interact with an AI assistant to **place**, **track**, or **cancel** food orders. At the current stage, the application supports only the **happy path for placing an order**.
 
